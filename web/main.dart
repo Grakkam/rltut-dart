@@ -2,11 +2,13 @@
 
 import 'package:malison/malison.dart';
 import 'package:malison/malison_web.dart';
+import 'package:piecemeal/piecemeal.dart';
 import 'package:rltut/src/action.dart';
 import 'package:rltut/src/actor.dart';
+import 'package:rltut/src/gamemap.dart';
 
-const int width = 80;
-const int height = 35;
+const int width = 30;
+const int height = 10;
 
 final ui = UserInterface<String>();
 final terminal = RetroTerminal.dos(width, height);
@@ -14,9 +16,12 @@ final terminal = RetroTerminal.dos(width, height);
 final heroX = width ~/ 2;
 final heroY = height ~/ 2;
 
-Actor hero = Actor(heroX, heroY, '@', Color.white);
+Actor hero = Actor(Vec(heroX, heroY), '@', Color.white);
+List actors = <Actor>[hero];
+var gameMap = GameMap(width, height);
 
 void main() {
+  hero.gameMap = gameMap;
 
   ui.keyPress.bind('up', KeyCode.up);
   ui.keyPress.bind('down', KeyCode.down);
@@ -38,47 +43,44 @@ void updateTerminal() {
 
 class MainScreen extends Screen<String> {
 
-  var action;
-  var actions = [];
-
-  var direction;
-  var color = Color.gold;
+  Action action;
 
   @override
   bool handleInput(String input) {
     switch (input) {
       case 'up':
-        action = MoveAction(0, -1);
+        action = MoveAction(Direction.n);
         break;
 
       case 'down':
-        action = MoveAction(0, 1);
+        action = MoveAction(Direction.s);
         break;
 
       case 'right':
-        action = MoveAction(1, 0);
+        action = MoveAction(Direction.e);
         break;
 
       case 'left':
-        action = MoveAction(-1, 0);
+        action = MoveAction(Direction.w);
         break;
       
       default:
         return false;
     }
 
-    action.bind(hero);
-    actions.add(action);
+    if (action != null) {
+      hero.setNextAction(action);
+    }
 
-    if (actions.isNotEmpty) {
-      for (var action in actions) {
-        action.perform();
-      }
-      actions = [];
+
+    for (Actor actor in actors) {
+      action = hero.action;
+      action.perform();
     }
 
     updateTerminal();
     ui.refresh();
+
 
     return true;
   }
@@ -88,21 +90,29 @@ class MainScreen extends Screen<String> {
   void render(Terminal terminal) {
     terminal.clear();
 
-    // terminal.writeAt(0, 0, '╔', color);
-    // terminal.writeAt(0, height-1, '╚', color);
-    // terminal.writeAt(width-1, height-1, '╝', color);
-    // terminal.writeAt(width-1, 0, '╗', color);
-    // for (var x = 1; x < width-1; x++) {
-    //   terminal.writeAt(x, 0, '═', color);
-    //   terminal.writeAt(x, height-1, '═', color);
-    // }
-    // for (var y = 1; y < height-1; y++) {
-    //   terminal.writeAt(0, y, '║', color);
-    //   terminal.writeAt(width-1, y, '║', color);
-    // }
+    for (var x=0; x<width; x++) {
+      for (var y=0; y<height; y++) {
+        var tile = gameMap.tiles[Vec(x, y)];
+        var wall = tile.blocked;
+        if (wall) {
+          terminal.writeAt(x, y, ' ', Color.black, gameMap.colors['darkWall']);
+        }
+        else {
+          terminal.writeAt(x, y, ' ', Color.black, gameMap.colors['darkGround']);
+        }
+      }
+    }
 
+    // terminal.writeAt(10, 10, gameMap.toString(), Color.white);
+    // var data = '${gameMap.tiles.width} x ${gameMap.tiles.height}';
+    // terminal.writeAt(10, 12, data, Color.white);
+    // var tile = gameMap.tiles[Vec(1, 1)];
+    // terminal.writeAt(10, 15, tile.blocked.toString());
 
-    terminal.writeAt(hero.xpos, hero.ypos, hero.glyph);
+    for (Actor actor in actors) {
+      terminal.writeAt(actor.x, actor.y, actor.glyph, actor.color);
+    }
+
 
   }
 

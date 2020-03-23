@@ -1,29 +1,35 @@
+import 'package:piecemeal/piecemeal.dart';
 import 'package:rltut/src/actor.dart';
+import 'package:rltut/src/gamemap.dart';
 
 abstract class Action {
   Actor _actor;
   Actor get actor => _actor;
+  GameMap _gameMap;
 
   void bind(Actor actor) {
     _actor = actor;
+    _gameMap = actor.gameMap;
   }
 
   void perform();
 }
 
 class MoveAction extends Action {
-  var _dirX;
-  var _dirY;
+  final Direction dir;
 
-  MoveAction(int dirX, int dirY) {
-    _dirX = dirX;
-    _dirY = dirY;
-  }
+  MoveAction(this.dir);
 
   @override
   void perform() {
-    _actor.xpos = _actor.xpos + _dirX;
-    _actor.ypos = _actor.ypos + _dirY;
+    var pos = _actor.pos + dir;
+    if (!_gameMap.tiles.bounds.contains(pos)) {
+      return;
+    }
+    if (_gameMap.isBlocked(pos)) {
+      return;
+    }
+    _actor.pos = pos;
   }
 
 }

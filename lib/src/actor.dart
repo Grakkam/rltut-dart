@@ -1,25 +1,30 @@
 import 'package:malison/malison.dart';
+import 'package:piecemeal/piecemeal.dart';
 // import 'package:malison/malison_web.dart';
-
+import 'package:rltut/src/action.dart';
+import 'package:rltut/src/gamemap.dart';
 
 class Actor {
-  int _xpos;
-  int _ypos;
+  Vec _pos;
   String _glyph;
   Color _color;
+  Action _action;
+  GameMap _gameMap;
 
-  Actor (int x, int y, String glyph, Color color) {
-    _xpos = x;
-    _ypos = y;
+  Actor (Vec pos, String glyph, Color color) {
+    _pos = pos;
     _glyph = glyph;
     _color = color;
   }
 
-  set xpos(int x) => _xpos = x;
-  int get xpos => _xpos;
+  set gameMap(GameMap gameMap) => _gameMap = gameMap;
+  GameMap get gameMap => _gameMap;
 
-  set ypos(int y) => _ypos = y;
-  int get ypos => _ypos;
+  set pos(Vec newPos) => _pos = newPos;
+  Vec get pos => _pos;
+
+  get x => _pos.x;
+  get y => _pos.y;
 
   set color(Color color) => _color = color;
   Color get color => _color;
@@ -29,5 +34,15 @@ class Actor {
     _glyph = String.fromCharCode(rune);
   }
   String get glyph => _glyph;
+
+  void setNextAction(Action action) {
+    _action = action;
+  }
+
+  Action get action {
+    _action.bind(this);
+    return _action;
+  }
+
 
 }
