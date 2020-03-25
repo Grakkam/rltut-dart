@@ -7,8 +7,8 @@ import 'package:rltut/src/action.dart';
 import 'package:rltut/src/actor.dart';
 import 'package:rltut/src/gamemap.dart';
 
-const int width = 30;
-const int height = 10;
+const int width = 100;
+const int height = 35;
 
 final ui = UserInterface<String>();
 final terminal = RetroTerminal.dos(width, height);
@@ -16,9 +16,12 @@ final terminal = RetroTerminal.dos(width, height);
 final heroX = width ~/ 2;
 final heroY = height ~/ 2;
 
-Actor hero = Actor(Vec(heroX, heroY), '@', Color.white);
-List actors = <Actor>[hero];
 var gameMap = GameMap(width, height);
+// Actor hero = Actor(Vec(heroX, heroY), '@', Color.white);
+Actor hero = Actor(Vec(4, 4), '@', Color.white);
+List actors = <Actor>[hero];
+
+List rooms;
 
 void main() {
   hero.gameMap = gameMap;
@@ -27,6 +30,9 @@ void main() {
   ui.keyPress.bind('down', KeyCode.down);
   ui.keyPress.bind('right', KeyCode.right);
   ui.keyPress.bind('left', KeyCode.left);
+
+  rooms = gameMap.makeMap(25, 6, 15);
+  hero.pos = gameMap.entrance;
 
   updateTerminal();
 
@@ -108,6 +114,12 @@ class MainScreen extends Screen<String> {
     // terminal.writeAt(10, 12, data, Color.white);
     // var tile = gameMap.tiles[Vec(1, 1)];
     // terminal.writeAt(10, 15, tile.blocked.toString());
+
+    // var i = 0;
+    // for (var room in rooms) {
+    //   terminal.writeAt(2, 2+i, '$i: $room');
+    //   i++;
+    // }
 
     for (Actor actor in actors) {
       terminal.writeAt(actor.x, actor.y, actor.glyph, actor.color);
