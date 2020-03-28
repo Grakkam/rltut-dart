@@ -3,7 +3,6 @@ import 'package:malison/malison.dart';
 import 'package:piecemeal/piecemeal.dart';
 import 'package:rltut/src/tile.dart';
 
-
 class GameMap {
   int _width;
   int _height;
@@ -11,6 +10,8 @@ class GameMap {
   final _colors = {
     'darkWall': Color.blue,
     'darkGround': Color.darkBlue,
+    'lightWall': Color.aqua,
+    'lightGround': Color.darkAqua,
   };
   Vec _firstRoomCenter;
 
@@ -26,6 +27,9 @@ class GameMap {
 
   Array2D get tiles => _tiles;
   Map get colors => _colors;
+  Rect get bounds => _tiles.bounds;
+
+  Tile operator [](Vec pos) => _tiles[pos];
 
   void InitializeTiles() {
     for (var x=0; x<_width; x++) {
@@ -110,12 +114,12 @@ class GameMap {
           // Connect new room to the last room.
           var prevRoom = rooms[numRooms - 1];
 
-          int x1 = newRoom.center.x;
-          int y1 = newRoom.center.y;
-          int x2 = prevRoom.center.x;
-          int y2 = prevRoom.center.y;
-          int lengthX = (x1 - x2).abs() + 1;
-          int lengthY = (y1 - y2).abs() + 1;
+          var x1 = newRoom.center.x;
+          var y1 = newRoom.center.y;
+          var x2 = prevRoom.center.x;
+          var y2 = prevRoom.center.y;
+          var lengthX = (x1 - x2).abs() + 1;
+          var lengthY = (y1 - y2).abs() + 1;
 
           // Flip a coin
           if (rand.nextBool()) {

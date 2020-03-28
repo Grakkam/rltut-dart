@@ -5,6 +5,7 @@ import 'package:malison/malison_web.dart';
 import 'package:piecemeal/piecemeal.dart';
 import 'package:rltut/src/action.dart';
 import 'package:rltut/src/actor.dart';
+import 'package:rltut/src/fov.dart';
 import 'package:rltut/src/gamemap.dart';
 
 const int width = 100;
@@ -17,6 +18,9 @@ final heroX = width ~/ 2;
 final heroY = height ~/ 2;
 
 var gameMap = GameMap(width, height);
+
+var fov = Fov(gameMap);
+
 // Actor hero = Actor(Vec(heroX, heroY), '@', Color.white);
 Actor hero = Actor(Vec(4, 4), '@', Color.white);
 List actors = <Actor>[hero];
@@ -33,6 +37,7 @@ void main() {
 
   rooms = gameMap.makeMap(25, 6, 15);
   hero.pos = gameMap.entrance;
+  fov.refresh(hero.pos);
 
   updateTerminal();
 
@@ -80,9 +85,11 @@ class MainScreen extends Screen<String> {
 
 
     for (Actor actor in actors) {
-      action = hero.action;
+      action = actor.action;
       action.perform();
     }
+
+    fov.refresh(hero.pos);
 
     updateTerminal();
     ui.refresh();
@@ -98,14 +105,28 @@ class MainScreen extends Screen<String> {
 
     for (var x=0; x<width; x++) {
       for (var y=0; y<height; y++) {
-        var tile = gameMap.tiles[Vec(x, y)];
+        var pos = Vec(x, y);
+        var tile = gameMap[pos];
         var wall = tile.blocked;
-        if (wall) {
-          terminal.writeAt(x, y, ' ', Color.black, gameMap.colors['darkWall']);
+        var color;
+        if (tile.isLit) {
+          if (wall) {
+            color = gameMap.colors['lightWall'];
+          } else {
+            color = gameMap.colors['lightGround'];
+          }
+          tile.isExplored = true;
+          terminal.writeAt(x, y, ' ', color, color);
+
+        } else if (tile.isExplored) {
+          if (wall) {
+            color = gameMap.colors['darkWall'];
+          } else {
+            color = gameMap.colors['darkGround'];
+          }
+          terminal.writeAt(x, y, ' ', color, color);
         }
-        else {
-          terminal.writeAt(x, y, ' ', Color.black, gameMap.colors['darkGround']);
-        }
+        gameMap.tiles[pos] = tile;
       }
     }
 
