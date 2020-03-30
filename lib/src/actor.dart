@@ -1,6 +1,5 @@
 import 'package:malison/malison.dart';
 import 'package:piecemeal/piecemeal.dart';
-// import 'package:malison/malison_web.dart';
 import 'package:rltut/src/action.dart';
 import 'package:rltut/src/gamemap.dart';
 
@@ -23,8 +22,8 @@ class Actor {
   set pos(Vec newPos) => _pos = newPos;
   Vec get pos => _pos;
 
-  get x => _pos.x;
-  get y => _pos.y;
+  int get x => _pos.x;
+  int get y => _pos.y;
 
   set color(Color color) => _color = color;
   Color get color => _color;

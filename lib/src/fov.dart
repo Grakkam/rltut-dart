@@ -1,104 +1,95 @@
-import 'dart:math';
+// import 'dart:math';
 
 import 'package:piecemeal/piecemeal.dart';
 
 import 'package:rltut/src/gamemap.dart';
 
+import 'gamemap.dart';
+
 // http://journal.stuffwithstuff.com/2015/09/07/what-the-hero-sees/
-// https://github.com/munificent/hauberk/blob/master/lib/src/engine/stage/fov.dart
 
+
+Vec transformOctant(int row, int col, int octant) {
+  switch (octant) {
+    case 0: return  Vec(col, -row);
+    case 1: return  Vec(row, -col);
+    case 2: return  Vec(row, col);
+    case 3: return  Vec(col, row);
+    case 4: return  Vec(-col, row);
+    case 5: return  Vec(-row, col);
+    case 6: return  Vec(-row, -col);
+    case 7: return  Vec(-col, -row);
+  }
+
+  throw 'unreachable';
+}
+
+/// Calculates the [Hero]'s field of view of the dungeon.
 class Fov {
-  static const _maxViewDistance = 8;
+  final GameMap _gameMap;
 
-  static final _octantCoordinates = [
-    [const Vec(0, -1), const Vec(1, 0)],
-    [const Vec(1, 0), const Vec(0, -1)],
-    [const Vec(1, 0), const Vec(0, 1)],
-    [const Vec(0, 1), const Vec(1, 0)],
-    [const Vec(0, 1), const Vec(-1, 0)],
-    [const Vec(-1, 0), const Vec(0, 1)],
-    [const Vec(-1, 0), const Vec(0, -1)],
-    [const Vec(0, -1), const Vec(-1, 0)],
-  ];
+  Fov(this._gameMap);
 
-  final GameMap _stage;
-
-  List<_Shadow> _shadows;
-
-  Fov(this._stage);
-
-  // Updates the visible flags in [stage] given the [Hero]'s [pos].
+  /// Updates the visible flags in [gameMap] given the [Hero]'s [pos].
   void refresh(Vec pos) {
+
+    for (var pos in _gameMap.tiles.bounds) {
+      _gameMap.tiles[pos].isVisible = false;
+    }
+
     // Sweep through the octants.
     for (var octant = 0; octant < 8; octant++) {
-      _refreshOctant(pos, octant);
+      refreshOctant(pos, octant);
     }
 
     // The starting position is always visible.
-    _stage[pos].isLit = true;
+    _gameMap.tiles[pos].isVisible = true;
   }
 
-  void _refreshOctant(Vec start, int octant) {
-    // Figure out which direction to increment based on the octant. Octant 0
-    // starts at 12 - 2 o'clock, and octants proceed clockwise from there.
-    var rowInc = _octantCoordinates[octant][0];
-    var colInc = _octantCoordinates[octant][1];
-
-    _shadows = <_Shadow>[];
-
-    final bounds = _stage.bounds;
+  List<Shadow> refreshOctant(Vec start, int octant, [int maxRows = 10]) {
+    var line = ShadowLine();
+    var bounds = _gameMap.tiles.bounds;
     var fullShadow = false;
 
     // Sweep through the rows ('rows' may be vertical or horizontal based on
     // the incrementors). Start at row 1 to skip the center position.
-    for (var row = 1; ; row++) {                                // <- Original
-    // for (var row = 1; row < _maxViewDistance; row++) {          // <- This doesn't work.
-      var pos = start + (rowInc * row);
-
-      // If we've traversed out of bounds, bail.
-      // Note: this improves performance, but works on the assumption that the
-      // starting tile of the FOV is in bounds.
-      if (!bounds.contains(pos)) {
+    for (var row = 1; row < maxRows; row++) {
+      // If we've gone out of bounds, bail.
+      if (!bounds.contains(start + transformOctant(row, 0, octant))) {
         break;
       }
 
-      // If we've reached a tile that is past the maximum view distance, we
-      // know the rest of the tiles in the column will be too since they are
-      // always farther.
-      var pastMaxDistance = false;
-
       for (var col = 0; col <= row; col++) {
+        var pos = start + transformOctant(row, col, octant);
 
-        if (fullShadow || pastMaxDistance) {
-          // If we know the entire row is in shadow, we don't need to be more
-          // specific.
-          _stage[pos].isLit = false;
-
-        } else {
-          var distance = (start - pos).length;
-          if (distance > _maxViewDistance) {
-            pastMaxDistance = true;
-          }
-
-          var projection = getProjection(col, row);
-          _stage[pos].isLit = !_isInShadow(projection);
-
-          // Add any opaque tiles to the shadow map.
-          if (_stage[pos].blockSight) {
-            fullShadow = _addShadow(projection);
-          }
-        }
-
-        // Move to the next column.
-        pos += colInc;
-
-        // If we've traversed out of bounds, bail on this row. This improves
-        // performance, but assumes the starting tile of the FOV is in bounds.
+        // If we've traversed out of bounds, bail on this row.
+        // note: this improves performance, but works on the assumption that
+        // the starting tile of the FOV is in bounds.
         if (!bounds.contains(pos)) {
           break;
         }
+
+        // If we know the entire row is in shadow, we don't need to be more
+        // specific.
+        if (fullShadow) {
+          _gameMap.tiles[pos].isVisible = false;
+        } else {
+          var projection = _projectTile(row, col);
+
+          // Set the visibility of this tile.
+          var visible = !line.isInShadow(projection);
+          _gameMap.tiles[pos].isVisible = visible;
+
+          // Add any opaque tiles to the shadow map.
+          if (visible && _gameMap.tiles[pos].isWall) {
+            line.add(projection);
+            fullShadow = line.isFullShadow;
+          }
+        }
       }
     }
+
+    return line._shadows;
   }
 
   /// Creates a [Shadow] that corresponds to the projected silhouette of the
@@ -109,84 +100,98 @@ class Fov {
   /// corners. From the perspective of octant zero, we know the square is
   /// above and to the right of the viewpoint, so it will be the top left and
   /// bottom right corners.
-  static _Shadow getProjection(int col, int row) {
+  Shadow _projectTile(int row, int col) {
     // The top edge of row 0 is 2 wide.
     var topLeft = col / (row + 2);
 
     // The bottom edge of row 0 is 1 wide.
     var bottomRight = (col + 1) / (row + 1);
 
-    return _Shadow(topLeft, bottomRight);
+    return Shadow(topLeft, bottomRight,
+        Vec(col, row + 2), Vec(col + 1, row + 1));
   }
+}
 
-  bool _isInShadow(_Shadow projection) {
+class ShadowLine {
+  final List<Shadow> _shadows = [];
+
+  bool isInShadow(Shadow projection) {
     // Check the shadow list.
-    for (final shadow in _shadows) {
-      if (shadow.contains(projection)) {
-        return true;
-      }
+    for (var shadow in _shadows) {
+      if (shadow.contains(projection)) return true;
     }
 
     return false;
   }
 
-  bool _addShadow(_Shadow shadow) {
+  /// Add [shadow] to the list of non-overlapping shadows. May merge one or
+  /// more shadows.
+  void add(Shadow shadow) {
+    // Figure out where to slot the new shadow in the sorted list.
     var index = 0;
-    for (index = 0; index < _shadows.length; index++) {
-      // See if we are at the insertion point for this shadow.
-      if (_shadows[index].start > shadow.start) {
-        // Break out and handle inserting below.
-        break;
-      }
+    for (; index < _shadows.length; index++) {
+      // Stop when we hit the insertion point.
+      if (_shadows[index].start >= shadow.start) break;
     }
 
     // The new shadow is going here. See if it overlaps the previous or next.
-    var overlapsPrev = ((index > 0) && (_shadows[index - 1].end > shadow.start));
-    var overlapsNext = ((index < _shadows.length) && (_shadows[index].start < shadow.end));
+    var overlappingPrevious;
+    if (index > 0 && _shadows[index - 1].end > shadow.start) {
+      overlappingPrevious = _shadows[index - 1];
+    }
+
+    var overlappingNext;
+    if (index < _shadows.length && _shadows[index].start < shadow.end) {
+      overlappingNext = _shadows[index];
+    }
 
     // Insert and unify with overlapping shadows.
-    if (overlapsNext) {
-      if (overlapsPrev) {
+    if (overlappingNext != null) {
+      if (overlappingPrevious != null) {
         // Overlaps both, so unify one and delete the other.
-        _shadows[index - 1].end = max(_shadows[index - 1].end, _shadows[index].end);
+        overlappingPrevious.end = overlappingNext.end;
+        overlappingPrevious.endPos = overlappingNext.endPos;
         _shadows.removeAt(index);
       } else {
-        // Just overlaps the next shadow, so unify it with that.
-        _shadows[index].start = min(_shadows[index].start, shadow.start);
+        // Only overlaps the next shadow, so unify it with that.
+        overlappingNext.start = shadow.start;
+        overlappingNext.startPos = shadow.startPos;
       }
     } else {
-      if (overlapsPrev) {
-        // Just overlaps the previous shadow, so unify it with that.
-        _shadows[index - 1].end = max(_shadows[index - 1].end, shadow.end);
+      if (overlappingPrevious != null) {
+        // Only overlaps the previous shadow, so unify it with that.
+        overlappingPrevious.end = shadow.end;
+        overlappingPrevious.endPos = shadow.endPos;
       } else {
         // Does not overlap anything, so insert.
         _shadows.insert(index, shadow);
       }
     }
+  }
 
-    // See if we are now shadowing everything.
-    return (_shadows.length == 1) &&
-        (_shadows[0].start == 0) &&
-        (_shadows[0].end == 1);
+  bool get isFullShadow {
+    return _shadows.length == 1 &&
+        _shadows[0].start == 0 &&
+        _shadows[0].end == 1;
   }
 }
 
 /// Represents the 1D projection of a 2D shadow onto a normalized line. In
 /// other words, a range from 0.0 to 1.0.
-class _Shadow {
+class Shadow {
   num start;
   num end;
 
-  _Shadow(this.start, this.end);
+  Vec startPos;
+  Vec endPos;
+
+  Shadow(this.start, this.end, this.startPos, this.endPos);
 
   @override
-  String toString() => '($start-$end)';
+  String toString() => '(${start}-${end})';
 
-  bool contains(_Shadow projection) {
-    return (start <= projection.start) && (end >= projection.end);
+  /// Returns `true` if [other] is completely covered by this shadow.
+  bool contains(Shadow other) {
+    return start <= other.start && end >= other.end;
   }
 }
-
-
-
-

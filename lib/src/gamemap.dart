@@ -12,6 +12,8 @@ class GameMap {
     'darkGround': Color.darkBlue,
     'lightWall': Color.aqua,
     'lightGround': Color.darkAqua,
+    'unexploredWall': Color.gray,
+    'unexploredGround': Color.darkGray,
   };
   Vec _firstRoomCenter;
 
