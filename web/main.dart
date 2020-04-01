@@ -10,6 +10,9 @@ import 'package:rltut/src/gamemap.dart';
 
 const bool debug = false;
 
+enum GameStates { playerTurn, enemyTurn }
+var gameState;
+
 const int width = 100;
 const int height = 35;
 
@@ -20,7 +23,9 @@ var gameMap = GameMap(width, height);
 
 var fov = Fov(gameMap);
 
-Actor hero = Actor(Vec(0, 0), '@', Color.white);
+// Actor hero = Actor(Vec(0, 0), '@', Color.white);
+
+Hero hero = Hero('Swoosh', Vec(0, 0));
 List actors = <Actor>[hero];
 
 List rooms;
@@ -33,9 +38,11 @@ void main() {
   ui.keyPress.bind('right', KeyCode.right);
   ui.keyPress.bind('left', KeyCode.left);
 
+  gameMap.maxMonstersPerRoom = 3;
   rooms = gameMap.makeMap(25, 6, 15);
   hero.pos = gameMap.entrance;
   fov.refresh(hero.pos);
+  gameState = GameStates.playerTurn;
 
   updateTerminal();
 
@@ -56,6 +63,8 @@ class MainScreen extends Screen<String> {
 
   @override
   bool handleInput(String input) {
+if (gameState == GameStates.playerTurn) {
+
     switch (input) {
       case 'up':
         action = MoveAction(Direction.n);
@@ -79,12 +88,30 @@ class MainScreen extends Screen<String> {
 
     if (action != null) {
       hero.setNextAction(action);
+      gameState = GameStates.enemyTurn;
     }
+}
+
+if (gameState == GameStates.enemyTurn) {
+  for (Actor monster in gameMap.monsters) {
+    monster.setNextAction(IdleAction());
+  }
+  gameState = GameStates.playerTurn;
+}
 
 
     for (Actor actor in actors) {
-      action = actor.action;
-      action.perform();
+      if (actor.action != null) {
+        actor.action.perform();
+      }
+      actor.setNextAction(null);
+    }
+
+    for (Actor monster in gameMap.monsters) {
+      if (monster.action != null) {
+        monster.action.perform();
+      }
+      monster.setNextAction(null);
     }
 
     fov.refresh(hero.pos);
@@ -127,10 +154,16 @@ class MainScreen extends Screen<String> {
       terminal.writeAt(pos.x, pos.y, ' ', color, color);
     }
 
+for (Actor monster in gameMap.monsters) {
+  if (gameMap.tiles[monster.pos].isVisible || debug) {
+    terminal.writeAt(monster.x, monster.y, monster.glyph, monster.color, gameMap.colors['lightGround']);
+  }
+}
+
+
     for (Actor actor in actors) {
       terminal.writeAt(actor.x, actor.y, actor.glyph, actor.color, gameMap.colors['lightGround']);
     }
-
 
   }
 

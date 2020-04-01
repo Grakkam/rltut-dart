@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:malison/malison.dart';
 import 'package:piecemeal/piecemeal.dart';
+import 'actor.dart';
 import 'package:rltut/src/tile.dart';
 
 class GameMap {
@@ -8,14 +9,18 @@ class GameMap {
   int _height;
   Array2D _tiles;
   final _colors = {
-    'darkWall': Color.blue,
-    'darkGround': Color.darkBlue,
-    'lightWall': Color.aqua,
-    'lightGround': Color.darkAqua,
-    'unexploredWall': Color.gray,
-    'unexploredGround': Color.darkGray,
+    'darkWall': Color.gray,
+    'darkGround': Color.darkGray,
+    'lightWall': Color.gold,
+    'lightGround': Color.darkGold,
+    'unexploredWall': Color.brown,
+    'unexploredGround': Color.darkBrown,
   };
   Vec _firstRoomCenter;
+
+  int _maxMonstersPerRoom;
+  set maxMonstersPerRoom(int maxMonstersPerRoom) => _maxMonstersPerRoom = maxMonstersPerRoom;
+  List monsters = <Actor>[];
 
   Vec get entrance => _firstRoomCenter;
 
@@ -57,15 +62,6 @@ class GameMap {
     }
   }
 
-  // void createHTunnel(int x1, int x2, int y) {
-  //   var tunnel = Rect.row(x1, y, x2-x1);
-  //   createRoom(tunnel);
-  // }
-
-  // void createVTunnel(int y1, int y2, int x) {
-  //   var tunnel = Rect.column(x, y1, y2-y1);
-  //   createRoom(tunnel);
-  // }
   void createHTunnel(int x, int y, int length) {
     var tunnel = Rect.row(x, y, length);
     createRoom(tunnel);
@@ -74,6 +70,35 @@ class GameMap {
   void createVTunnel(int x, int y, int length) {
     var tunnel = Rect.column(x, y, length);
     createRoom(tunnel);
+  }
+
+  void placeMonsters(Rect room, int maxMonstersPerRoom) {
+    var rand = Random();
+    var numberOfMonsters = rand.nextInt(maxMonstersPerRoom);
+
+    for (var i = 0; i < numberOfMonsters; i++) {
+      var x = rand.nextInt(room.width - 1) + room.left + 1;
+      var y = rand.nextInt(room.height - 1) + room.top + 1;
+      var pos = Vec(x, y);
+
+      var occupied = false;
+      for (var monster in monsters) {
+        if (pos == monster.pos) {
+          occupied = true;
+        }
+      }
+
+      var monster;
+      if (!occupied) {
+        if (rand.nextInt(100) < 80) {
+          monster = Orc(pos);
+        } else {
+          monster = Troll(pos);
+        }
+
+        monsters.add(monster);
+      }
+    }
   }
 
   List makeMap(int maxRooms, int minRoomSize, int maxRoomSize) {
@@ -136,6 +161,7 @@ class GameMap {
           }
         }
         rooms.add(newRoom);
+        placeMonsters(newRoom, _maxMonstersPerRoom);
         numRooms++;
       }
 
@@ -147,5 +173,15 @@ class GameMap {
   bool intersect(Rect room1, Rect room2) {
     return room1.topLeft.x <= room2.topRight.x && room1.topRight.x >= room2.topLeft.x &&
            room1.topLeft.y <= room2.bottomRight.y && room1.bottomRight.y >= room2.topLeft.y;
+  }
+
+  Actor monsterAtLocation(Vec pos) {
+    for (var monster in monsters) {
+      if (monster.pos == pos) {
+        return monster;
+      }
+    }
+
+    return null;
   }
 }

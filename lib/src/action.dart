@@ -15,6 +15,15 @@ abstract class Action {
   void perform();
 }
 
+class IdleAction extends Action {
+  IdleAction();
+  @override
+  void perform() {
+    var pos = _actor.pos;
+print('${_actor.name} stands idle at ($pos), staring at nothing in particular.');
+  }
+}
+
 class MoveAction extends Action {
   final Direction dir;
 
@@ -27,6 +36,11 @@ class MoveAction extends Action {
       return;
     }
     if (_gameMap.isBlocked(pos)) {
+      return;
+    }
+    var monster = _gameMap.monsterAtLocation(pos);
+    if (monster != null) {
+print('You kick the ${monster.name} at (${monster.pos}) in the shin!');
       return;
     }
     _actor.pos = pos;
