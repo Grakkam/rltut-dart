@@ -3,7 +3,7 @@ import 'package:piecemeal/piecemeal.dart';
 import 'package:rltut/src/action.dart';
 import 'package:rltut/src/gamemap.dart';
 
-class Actor {
+abstract class Actor {
   Vec _pos;
   String _glyph;
   Color _color;
@@ -11,7 +11,7 @@ class Actor {
   GameMap _gameMap;
   String _name;
 
-  Actor (String name, Vec pos, String glyph, Color color) {
+  Actor (String name, String glyph, Color color) {
     _pos = pos;
     _glyph = glyph;
     _color = color;
@@ -24,7 +24,7 @@ class Actor {
   set gameMap(GameMap gameMap) => _gameMap = gameMap;
   GameMap get gameMap => _gameMap;
 
-  set pos(Vec newPos) => _pos = newPos;
+  set pos(Vec pos) => _pos = pos;
   Vec get pos => _pos;
   int get x => _pos.x;
   int get y => _pos.y;
@@ -53,7 +53,7 @@ class Actor {
 
 class Hero extends Actor {
   
-  Hero(String name, Vec pos) : super(name, pos, '@', Color.white) {
+  Hero(String name) : super(name, '@', Color.white) {
 
   }
 }
@@ -61,15 +61,15 @@ class Hero extends Actor {
 
 class Orc extends Actor {
   
-  Orc(Vec pos) : super('Orc', pos, 'o', Color.green) {
-    
+  Orc(Vec pos) : super('Orc', 'o', Color.green) {
+    _pos = pos;
   }
 }
 
 
 class Troll extends Actor {
   
-  Troll(Vec pos) : super('Troll', pos, 'T', Color.darkGreen) {
-    
+  Troll(Vec pos) : super('Troll', 'T', Color.darkGreen) {
+    _pos = pos;
   }
 }

@@ -1,13 +1,7 @@
-// import 'dart:math';
-
 import 'package:piecemeal/piecemeal.dart';
-
 import 'package:rltut/src/gamemap.dart';
 
-import 'gamemap.dart';
-
 // http://journal.stuffwithstuff.com/2015/09/07/what-the-hero-sees/
-
 
 Vec transformOctant(int row, int col, int octant) {
   switch (octant) {

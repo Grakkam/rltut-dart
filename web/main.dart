@@ -1,5 +1,3 @@
-// import 'dart:html' as html;
-
 import 'package:malison/malison.dart';
 import 'package:malison/malison_web.dart';
 import 'package:piecemeal/piecemeal.dart';
@@ -20,27 +18,25 @@ final ui = UserInterface<String>();
 final terminal = RetroTerminal.dos(width, height);
 
 var gameMap = GameMap(width, height);
-
 var fov = Fov(gameMap);
 
-// Actor hero = Actor(Vec(0, 0), '@', Color.white);
-
-Hero hero = Hero('Swoosh', Vec(0, 0));
+Hero hero = Hero('Swoosh');
 List actors = <Actor>[hero];
 
-List rooms;
 
 void main() {
-  hero.gameMap = gameMap;
 
   ui.keyPress.bind('up', KeyCode.up);
   ui.keyPress.bind('down', KeyCode.down);
   ui.keyPress.bind('right', KeyCode.right);
   ui.keyPress.bind('left', KeyCode.left);
 
+  hero.gameMap = gameMap;
   gameMap.maxMonstersPerRoom = 3;
-  rooms = gameMap.makeMap(25, 6, 15);
+  gameMap.makeMap(25, 6, 15);
   hero.pos = gameMap.entrance;
+  actors.addAll(gameMap.monsters);
+
   fov.refresh(hero.pos);
   gameState = GameStates.playerTurn;
 
@@ -63,55 +59,49 @@ class MainScreen extends Screen<String> {
 
   @override
   bool handleInput(String input) {
-if (gameState == GameStates.playerTurn) {
 
-    switch (input) {
-      case 'up':
-        action = MoveAction(Direction.n);
-        break;
+    if (gameState == GameStates.playerTurn) {
 
-      case 'down':
-        action = MoveAction(Direction.s);
-        break;
+      switch (input) {
+        case 'up':
+          action = MoveAction(Direction.n);
+          break;
 
-      case 'right':
-        action = MoveAction(Direction.e);
-        break;
+        case 'down':
+          action = MoveAction(Direction.s);
+          break;
 
-      case 'left':
-        action = MoveAction(Direction.w);
-        break;
-      
-      default:
-        return false;
+        case 'right':
+          action = MoveAction(Direction.e);
+          break;
+
+        case 'left':
+          action = MoveAction(Direction.w);
+          break;
+        
+        default:
+          return false;
+      }
+
+      if (action != null) {
+        hero.setNextAction(action);
+        gameState = GameStates.enemyTurn;
+      }
     }
 
-    if (action != null) {
-      hero.setNextAction(action);
-      gameState = GameStates.enemyTurn;
+    if (gameState == GameStates.enemyTurn) {
+      for (var monster in gameMap.monsters) {
+        monster.setNextAction(IdleAction());
+      }
+      gameState = GameStates.playerTurn;
     }
-}
-
-if (gameState == GameStates.enemyTurn) {
-  for (Actor monster in gameMap.monsters) {
-    monster.setNextAction(IdleAction());
-  }
-  gameState = GameStates.playerTurn;
-}
 
 
-    for (Actor actor in actors) {
+    for (var actor in actors) {
       if (actor.action != null) {
         actor.action.perform();
       }
       actor.setNextAction(null);
-    }
-
-    for (Actor monster in gameMap.monsters) {
-      if (monster.action != null) {
-        monster.action.perform();
-      }
-      monster.setNextAction(null);
     }
 
     fov.refresh(hero.pos);
@@ -154,15 +144,10 @@ if (gameState == GameStates.enemyTurn) {
       terminal.writeAt(pos.x, pos.y, ' ', color, color);
     }
 
-for (Actor monster in gameMap.monsters) {
-  if (gameMap.tiles[monster.pos].isVisible || debug) {
-    terminal.writeAt(monster.x, monster.y, monster.glyph, monster.color, gameMap.colors['lightGround']);
-  }
-}
-
-
-    for (Actor actor in actors) {
-      terminal.writeAt(actor.x, actor.y, actor.glyph, actor.color, gameMap.colors['lightGround']);
+    for (var actor in actors) {
+      if (gameMap.tiles[actor.pos].isVisible) {
+        terminal.writeAt(actor.x, actor.y, actor.glyph, actor.color, gameMap.colors['lightGround']);
+      }
     }
 
   }
