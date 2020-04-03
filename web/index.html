@@ -1,35 +1,88 @@
-<!DOCTYPE html>
-
 <html>
 <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="scaffolded-by" content="https://github.com/dart-lang/stagehand">
-    <title>rltut</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="icon" href="favicon.ico">
-    <script defer src="main.dart.js"></script>
-    <style>
-      body {
-        background: #111;
-        color: #ccc;
-        text-align: center;
-      }
-  
-      canvas {
-        display: inline-block;
-        margin-top: 20px;
-        padding: 4px;
-        background: #000;
-        border: solid 1px #333;
-      }
-    </style>
-  </head>
+  <title>rltut-dart</title>
+  <link href='http://fonts.googleapis.com/css?family=Buenard' rel='stylesheet' type='text/css'>
+  <style>
+    body {
+      background: #000;
+      color: #ccc;
+      text-align: center;
+      font: 18px/24px Buenard, Georgia, serif;
 
+      /*display: flex;*/
+      /*flex-direction: column;*/
+      /*justify-content: center;*/
+      /*align-items: center;*/
+    }
+
+    a {
+      color: hsl(30, 90%, 55%);
+    }
+
+    a:visited {
+      color: hsl(30, 90%, 45%);
+    }
+
+    a:hover {
+      color: hsl(30, 90%, 75%);
+    }
+
+    canvas {
+      border: solid 4px #000;
+    }
+
+    pre {
+      font: 12px/14px Menlo, inconsolata, monaco, monospace;
+      letter-spacing: 1px;
+      width: 900px;
+      margin: 20px auto;
+    }
+
+    .button-bar {
+      position: fixed;
+      bottom: 0;
+    }
+
+    button {
+      font-size: 10px;
+      background: #222;
+      border: solid 1px #222;
+      color: #000;
+      border-radius: 2px;
+      margin-right: 2px;
+      outline: none;
+    }
+
+    .button-bar:hover button {
+      background: #333;
+      border: solid 1px #666;
+      color: #999;
+    }
+
+    .button-bar:hover button:hover {
+      color: #ccc;
+      cursor: pointer;
+    }
+
+    .debug {
+      display: none;
+      position: absolute;
+      font: 10px/11px "Source Code Pro", Consolas, Menlo, monospace;
+      color: #ddd;
+      background: #222;
+      padding: 5px;
+      text-align: left;
+      width: inherit;
+      margin: 0;
+      letter-spacing: 0;
+      opacity: 0.5;
+    }
+  </style>
+</head>
 <body>
-
-  <div id="output"></div>
-
+<div class="button-bar">
+</div>
+<div id="game"></div>
+<script type="application/javascript" src="main.dart.js"></script>
 </body>
 </html>
