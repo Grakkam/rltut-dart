@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:malison/malison.dart';
 import 'package:piecemeal/piecemeal.dart';
 import 'package:rltut/src/actor.dart';
+import 'package:rltut/src/monster.dart';
 import 'package:rltut/src/tile.dart';
 
 class GameMap {
@@ -91,9 +92,9 @@ class GameMap {
       var monster;
       if (!occupied) {
         if (_rand.nextInt(100) < 80) {
-          monster = Orc(pos);
+          monster = Monster(Orc(), this, pos);
         } else {
-          monster = Troll(pos);
+          monster = Monster(Troll(), this, pos);
         }
 
         monsters.add(monster);
@@ -175,7 +176,7 @@ class GameMap {
 
   Actor monsterAtLocation(Vec pos) {
     for (var monster in monsters) {
-      if (monster.pos == pos) {
+      if (monster.pos == pos && monster.isAlive) {
         return monster;
       }
     }

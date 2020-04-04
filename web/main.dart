@@ -9,6 +9,7 @@ import 'package:rltut/src/actor.dart';
 import 'package:rltut/src/fov.dart';
 import 'package:rltut/src/gamemap.dart';
 import 'package:rltut/src/input.dart';
+import 'package:rltut/src/monster.dart';
 
 const bool debug = false;
 
@@ -175,18 +176,15 @@ void main() {
   _ui.keyPress.bind(Input.s, KeyCode.numpad2);
   _ui.keyPress.bind(Input.se, KeyCode.numpad3);
 
-  hero = Hero('Swoosh');
-
   gameMap = GameMap(_font.terminal.width, _font.terminal.height);
-  fov = Fov(gameMap);
-
-  hero.gameMap = gameMap;
   gameMap.maxMonstersPerRoom = 3;
   gameMap.makeMap(25, 6, 15);
-  hero.pos = gameMap.entrance;
+  hero = Hero(gameMap, 'Swoosh', gameMap.entrance);
+
   actors.add(hero);
   actors.addAll(gameMap.monsters);
 
+  fov = Fov(gameMap);
   fov.refresh(hero.pos);
   gameState = GameStates.playerTurn;
 
@@ -247,17 +245,30 @@ class GameScreen extends Screen<Input> {
 
     if (gameState == GameStates.enemyTurn) {
       for (var monster in gameMap.monsters) {
-        monster.setNextAction(IdleAction());
+        // monster.setNextAction(IdleAction());
       }
       gameState = GameStates.playerTurn;
     }
 
 
-    for (var actor in actors) {
-      if (actor.action != null) {
-        actor.action.perform();
+    // for (var actor in actors) {
+    //   while (actor.action != null && !actor.action.perform()) {
+
+    //   }
+    //   actor.setNextAction(null);
+    //   if (actor is Monster && !actor.isAlive) {
+    //     actor = null;
+    //   }
+    // }
+    for (var i = 0; i < actors.length; i++) {
+      while (actors[i].action != null && !actors[i].action.perform()) {
+
       }
-      actor.setNextAction(null);
+      actors[i].setNextAction(null);
+      if (actors[i] is Monster && !actors[i].isAlive) {
+        actors.removeAt(i);
+        i--;
+      }
     }
 
     fov.refresh(hero.pos);

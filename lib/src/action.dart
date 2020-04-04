@@ -1,6 +1,7 @@
 import 'package:piecemeal/piecemeal.dart';
 import 'package:rltut/src/actor.dart';
 import 'package:rltut/src/gamemap.dart';
+import 'package:rltut/src/monster.dart';
 
 abstract class Action {
   Actor _actor;
@@ -12,15 +13,16 @@ abstract class Action {
     _gameMap = actor.gameMap;
   }
 
-  void perform();
+  bool perform();
 }
 
 class IdleAction extends Action {
   IdleAction();
   @override
-  void perform() {
+  bool perform() {
     var pos = _actor.pos;
 print('${_actor.name} stands idle at ($pos), staring at nothing in particular.');
+    return true;
   }
 }
 
@@ -30,20 +32,44 @@ class MoveAction extends Action {
   MoveAction(this.dir);
 
   @override
-  void perform() {
+  bool perform() {
     var pos = _actor.pos + dir;
     if (!_gameMap.tiles.bounds.contains(pos)) {
-      return;
+      return true;
     }
     if (_gameMap.isBlocked(pos)) {
-      return;
+      return true;
     }
     var monster = _gameMap.monsterAtLocation(pos);
     if (monster != null) {
-print('You kick the ${monster.name} at (${monster.pos}) in the shin!');
-      return;
+      _actor.setNextAction(HitAction(monster, pos));
+      return false;
     }
     _actor.pos = pos;
+
+    return true;
   }
 
+}
+
+class HitAction extends Action {
+  final Actor _target;
+  final Vec _pos;
+
+  HitAction(this._target, this._pos);
+
+  @override
+  bool perform() {
+    if (_actor is Hero && _pos == _target.pos) {
+print('${_actor.name} hits ${_target.name} for ${_actor.melee.power} points of damage!');
+      var targetIsDead = _target.takeDamage(_actor.melee.power);
+      if (targetIsDead) {
+print('${_target.name} is dead!');
+      }
+      return true;
+
+    }
+
+    return true;
+  }
 }
