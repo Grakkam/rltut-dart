@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:malison/malison.dart';
 import 'package:piecemeal/piecemeal.dart';
 import 'package:rltut/src/action.dart';
@@ -10,9 +11,23 @@ abstract class Actor {
   GameMap _gameMap;
   String _name;
 
-  Attack _melee;
-  Attack get melee => _melee;
+  int _hp;
+  set hp(int value) {
+    _hp = value;
+  }
+  int get hp => _hp;
 
+  Attack _melee;
+  set melee(Attack value) {
+    _melee = value;
+  }
+  Attack get melee => _melee;
+  
+  Defense _defense;
+  set defense(Defense value) {
+    _defense = value;
+  }
+  Defense get defense => _defense;
 
   Actor(this._gameMap, this._name, this._pos);
 
@@ -38,8 +53,31 @@ abstract class Actor {
     return _action;
   }
 
+  bool get isAlive => _hp > 0;
+
   // Returns true if actor is dead.
-  bool takeDamage(int amount);
+  bool takeDamage(int amount) {
+    amount = amount - defense.toughness;
+    if (amount > 0) {
+      hp -= amount;
+    }
+
+    return !isAlive;
+  }
+
+  Action moveTowards(Vec target) {
+    var dx = target.x - pos.x;
+    var dy = target.y - pos.y;
+    var distance = math.sqrt(dx * dx + dy * dy);
+    dx = (dx / distance).round();
+    dy = (dy / distance).round();
+
+    if (!(gameMap[Vec(pos.x + dx, pos.y + dy)].blocked) || gameMap.blockingActorAtLocation(Vec(pos.x + dx, pos.y + dy)) == null) {
+      return MoveAction(Direction(dx, dy));
+    } else {
+      return IdleAction();
+    }
+  }
 
 }
 
@@ -62,22 +100,15 @@ class Hero extends Actor {
   }
   int get maxHp => _maxHp;
 
-  int _hp;
-  set hp(value) {
-    _hp = value;
-  }
-  int get hp => _hp;
-
-  @override
-  bool takeDamage(int amount) {
-    return false;
-  }
-
   Hero(GameMap gameMap, String name, Vec pos) : super(gameMap, name, pos) {
     _glyph = '@';
     _color = Color.white;
     _melee = Attack(1, 5);
+    _defense = Defense(2);
+    gameMap.hero = this;
+    hp = maxHp = 20;
   }
+
 }
 
 

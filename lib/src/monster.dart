@@ -1,6 +1,9 @@
 import 'package:malison/malison.dart';
 import 'package:piecemeal/piecemeal.dart';
+import 'package:rltut/src/action.dart';
 import 'package:rltut/src/actor.dart';
+import 'package:rltut/src/combat.dart';
+import 'package:rltut/src/fov.dart';
 import 'package:rltut/src/gamemap.dart';
 
 class Breed {
@@ -8,18 +11,20 @@ class Breed {
   final int maxHp;
   final String glyph;
   final Color color;
+  final Attack melee;
+  final Defense defense;
 
-  Breed(this.name, this.maxHp, this.glyph, this.color);
+  Breed(this.name, this.maxHp, this.glyph, this.color, this.melee, this.defense);
 }
 
 class Orc extends Breed {
   Orc()
-      : super('Orc', 10, 'o', Color.green);
+      : super('Orc', 10, 'o', Color.green, Attack(1, 3), Defense(2));
 }
 
 class Troll extends Breed {
   Troll()
-      : super('Troll', 20, 'T', Color.darkGreen) {
+      : super('Troll', 20, 'T', Color.darkGreen, Attack(1, 5), Defense(4)) {
         
       }
 }
@@ -34,22 +39,18 @@ class Monster extends Actor {
   Color get color => _breed.color;
   String get glyph => _breed.glyph;
 
-  bool get isAlive => _hp > 0;
-
-  int _hp;
-
-  @override
-  bool takeDamage(int amount) {
-    _hp -= amount;
-
-    return !isAlive;
-  }
-
-
   Monster(this._breed, GameMap gameMap, Vec pos)
       : super(gameMap, _breed.name, pos) {
-        _hp = _breed.maxHp;
+        hp = _breed.maxHp;
+        melee = breed.melee;
+        defense = breed.defense;
+  }
 
-      }
+  Action takeTurn() {
+    if (gameMap[pos].isVisible) {
+      return moveTowards(gameMap.hero.pos);
+    }
+    return IdleAction();
+  }
 }
 

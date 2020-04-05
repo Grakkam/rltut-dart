@@ -6,7 +6,6 @@ import 'package:malison/malison_web.dart';
 import 'package:piecemeal/piecemeal.dart';
 import 'package:rltut/src/action.dart';
 import 'package:rltut/src/actor.dart';
-import 'package:rltut/src/fov.dart';
 import 'package:rltut/src/gamemap.dart';
 import 'package:rltut/src/input.dart';
 import 'package:rltut/src/monster.dart';
@@ -17,10 +16,7 @@ enum GameStates { playerTurn, enemyTurn }
 var gameState;
 
 Hero hero;
-List actors = <Actor>[];
 var gameMap;
-var fov;
-
 
 
 final _fonts = <TerminalFont>[];
@@ -181,11 +177,10 @@ void main() {
   gameMap.makeMap(25, 6, 15);
   hero = Hero(gameMap, 'Swoosh', gameMap.entrance);
 
-  actors.add(hero);
-  actors.addAll(gameMap.monsters);
+  gameMap.actors.add(hero);
+  gameMap.actors.addAll(gameMap.monsters);
 
-  fov = Fov(gameMap);
-  fov.refresh(hero.pos);
+  gameMap.fov.refresh(hero.pos);
   gameState = GameStates.playerTurn;
 
   _ui.push(GameScreen());
@@ -245,33 +240,23 @@ class GameScreen extends Screen<Input> {
 
     if (gameState == GameStates.enemyTurn) {
       for (var monster in gameMap.monsters) {
-        // monster.setNextAction(IdleAction());
+        monster.setNextAction(monster.takeTurn());
       }
       gameState = GameStates.playerTurn;
     }
 
-
-    // for (var actor in actors) {
-    //   while (actor.action != null && !actor.action.perform()) {
-
-    //   }
-    //   actor.setNextAction(null);
-    //   if (actor is Monster && !actor.isAlive) {
-    //     actor = null;
-    //   }
-    // }
-    for (var i = 0; i < actors.length; i++) {
-      while (actors[i].action != null && !actors[i].action.perform()) {
+    for (var i = 0; i < gameMap.actors.length; i++) {
+      while (gameMap.actors[i].action != null && !gameMap.actors[i].action.perform()) {
 
       }
-      actors[i].setNextAction(null);
-      if (actors[i] is Monster && !actors[i].isAlive) {
-        actors.removeAt(i);
+      gameMap.actors[i].setNextAction(null);
+      if (gameMap.actors[i] is Monster && !gameMap.actors[i].isAlive) {
+        gameMap.actors.removeAt(i);
         i--;
       }
     }
 
-    fov.refresh(hero.pos);
+    gameMap.fov.refresh(hero.pos);
 
     updateTerminal();
     // _ui.refresh();
@@ -311,7 +296,7 @@ class GameScreen extends Screen<Input> {
       terminal.writeAt(pos.x, pos.y, ' ', color, color);
     }
 
-    for (var actor in actors) {
+    for (var actor in gameMap.actors) {
       if (gameMap.tiles[actor.pos].isVisible) {
         terminal.writeAt(actor.x, actor.y, actor.glyph, actor.color, gameMap.colors['lightGround']);
       }

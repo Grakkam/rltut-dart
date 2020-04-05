@@ -2,14 +2,16 @@ import 'dart:math' as math;
 import 'package:malison/malison.dart';
 import 'package:piecemeal/piecemeal.dart';
 import 'package:rltut/src/actor.dart';
+import 'package:rltut/src/fov.dart';
 import 'package:rltut/src/monster.dart';
 import 'package:rltut/src/tile.dart';
 
 class GameMap {
-  int _width;
-  int _height;
+  final int _width;
+  final int _height;
   Array2D _tiles;
-  final _rand = math.Random();
+  Fov fov;
+  final rand = math.Random();
   final _colors = {
     'darkWall': Color.darkGray,
     'darkGround': Color.gray,
@@ -20,18 +22,20 @@ class GameMap {
   };
   Vec _firstRoomCenter;
 
+  Hero hero;
+
   int _maxMonstersPerRoom;
   set maxMonstersPerRoom(int maxMonstersPerRoom) => _maxMonstersPerRoom = maxMonstersPerRoom;
   List monsters = <Actor>[];
+  List actors = <Actor>[];
 
   Vec get entrance => _firstRoomCenter;
 
-  GameMap(int width, int height) {
-    _width = width;
-    _height = height;
-    _tiles = Array2D(width, height);
+  GameMap(this._width, this._height) {
+    _tiles = Array2D(_width, _height);
     
     InitializeTiles();
+    fov = Fov(this);
   }
 
   Array2D get tiles => _tiles;
@@ -75,11 +79,11 @@ class GameMap {
   }
 
   void placeMonsters(Rect room, int maxMonstersPerRoom) {
-    var numberOfMonsters = _rand.nextInt(maxMonstersPerRoom);
+    var numberOfMonsters = rand.nextInt(maxMonstersPerRoom);
 
     for (var i = 0; i < numberOfMonsters; i++) {
-      var x = _rand.nextInt(room.width - 1) + room.left + 1;
-      var y = _rand.nextInt(room.height - 1) + room.top + 1;
+      var x = rand.nextInt(room.width - 1) + room.left + 1;
+      var y = rand.nextInt(room.height - 1) + room.top + 1;
       var pos = Vec(x, y);
 
       var occupied = false;
@@ -91,7 +95,7 @@ class GameMap {
 
       var monster;
       if (!occupied) {
-        if (_rand.nextInt(100) < 80) {
+        if (rand.nextInt(100) < 80) {
           monster = Monster(Orc(), this, pos);
         } else {
           monster = Monster(Troll(), this, pos);
@@ -108,17 +112,17 @@ class GameMap {
 
 
     for (var r = 0; r < maxRooms; r++) {
-      var w = _rand.nextInt(maxRoomSize);
+      var w = rand.nextInt(maxRoomSize);
       if (w < minRoomSize) {
         w = minRoomSize;
       }
-      var h = _rand.nextInt(maxRoomSize);
+      var h = rand.nextInt(maxRoomSize);
       if (h < minRoomSize) {
         h = minRoomSize;
       }
 
-      var x = _rand.nextInt(_width - w - 1);
-      var y = _rand.nextInt(_height - h - 1);
+      var x = rand.nextInt(_width - w - 1);
+      var y = rand.nextInt(_height - h - 1);
 
       var newRoom = Rect(x, y, w, h);
 
@@ -149,7 +153,7 @@ class GameMap {
           var lengthY = (y1 - y2).abs() + 1;
 
           // Flip a coin
-          if (_rand.nextBool()) {
+          if (rand.nextBool()) {
             // First move horizontally then vertically
             createHTunnel(math.min(x1, x2), y2, lengthX);
             createVTunnel(x1, math.min(y1, y2), lengthY);
@@ -178,6 +182,16 @@ class GameMap {
     for (var monster in monsters) {
       if (monster.pos == pos && monster.isAlive) {
         return monster;
+      }
+    }
+
+    return null;
+  }
+
+  Actor blockingActorAtLocation(Vec pos) {
+    for (var actor in actors) {
+      if (actor.isAlive && actor.pos == pos) {
+        return actor;
       }
     }
 

@@ -61,7 +61,7 @@ class HitAction extends Action {
   @override
   bool perform() {
     if (_actor is Hero && _pos == _target.pos) {
-print('${_actor.name} hits ${_target.name} for ${_actor.melee.power} points of damage!');
+print('${_actor.name} hits ${_target.name} for ${_actor.melee.power - _target.defense.toughness} points of damage!');
       var targetIsDead = _target.takeDamage(_actor.melee.power);
       if (targetIsDead) {
 print('${_target.name} is dead!');
