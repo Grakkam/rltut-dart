@@ -66,18 +66,22 @@ abstract class Actor {
   }
 
   Action moveTowards(Vec target) {
-    var dx = target.x - pos.x;
-    var dy = target.y - pos.y;
-    var distance = math.sqrt(dx * dx + dy * dy);
-    dx = (dx / distance).round();
-    dy = (dy / distance).round();
+    var d = target - pos;
+    var distance = distanceTo(target);
+    var dx = (d.x / distance).round();
+    var dy = (d.y / distance).round();
 
-    if (!(gameMap[Vec(pos.x + dx, pos.y + dy)].blocked) || gameMap.blockingActorAtLocation(Vec(pos.x + dx, pos.y + dy)) == null) {
+    if (!(gameMap[Vec(pos.x + dx, pos.y + dy)].blocked) || gameMap.blockingActorAtLocation(Vec(pos.x + dx, pos.y + dy)) != null) {
       return MoveAction(Direction(dx, dy));
     } else {
       return IdleAction();
     }
   }
+
+  double distanceTo(Vec target) {
+    var d = target - pos;
+    return math.sqrt(d.x * d.x + d.y * d.y);
+  }  
 
 }
 

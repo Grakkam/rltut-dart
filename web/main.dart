@@ -239,21 +239,24 @@ class GameScreen extends Screen<Input> {
     }
 
     if (gameState == GameStates.enemyTurn) {
-      for (var monster in gameMap.monsters) {
-        monster.setNextAction(monster.takeTurn());
+      for (var actor in gameMap.actors) {
+        if (actor is Monster) {
+          actor.setNextAction(actor.takeTurn());
+        }
       }
       gameState = GameStates.playerTurn;
     }
 
     for (var i = 0; i < gameMap.actors.length; i++) {
+      // if (gameMap.actors[i] is Monster && !gameMap.actors[i].isAlive) {
+      if (!gameMap.actors[i].isAlive) {
+        gameMap.actors.removeAt(i);
+        i--;
+      }
       while (gameMap.actors[i].action != null && !gameMap.actors[i].action.perform()) {
 
       }
       gameMap.actors[i].setNextAction(null);
-      if (gameMap.actors[i] is Monster && !gameMap.actors[i].isAlive) {
-        gameMap.actors.removeAt(i);
-        i--;
-      }
     }
 
     gameMap.fov.refresh(hero.pos);
@@ -297,7 +300,7 @@ class GameScreen extends Screen<Input> {
     }
 
     for (var actor in gameMap.actors) {
-      if (gameMap.tiles[actor.pos].isVisible) {
+      if (gameMap.tiles[actor.pos].isVisible && actor.isAlive) {
         terminal.writeAt(actor.x, actor.y, actor.glyph, actor.color, gameMap.colors['lightGround']);
       }
     }

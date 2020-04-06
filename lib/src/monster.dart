@@ -47,8 +47,13 @@ class Monster extends Actor {
   }
 
   Action takeTurn() {
+    var hero = gameMap.hero;
     if (gameMap[pos].isVisible) {
-      return moveTowards(gameMap.hero.pos);
+      if (distanceTo(hero.pos) > 1) {
+        return moveTowards(hero.pos);
+      } else if (hero.hp > 0) {
+        return HitAction(hero, hero.pos);
+      }
     }
     return IdleAction();
   }

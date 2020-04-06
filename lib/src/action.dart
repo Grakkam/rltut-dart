@@ -20,8 +20,8 @@ class IdleAction extends Action {
   IdleAction();
   @override
   bool perform() {
-    var pos = _actor.pos;
-print('${_actor.name} stands idle at ($pos), staring at nothing in particular.');
+// var pos = _actor.pos;
+// print('${_actor.name} stands idle at ($pos), staring at nothing in particular.');
     return true;
   }
 }
@@ -40,11 +40,12 @@ class MoveAction extends Action {
     if (_gameMap.isBlocked(pos)) {
       return true;
     }
-    var monster = _gameMap.monsterAtLocation(pos);
-    if (monster != null) {
-      _actor.setNextAction(HitAction(monster, pos));
+    var blockingActor = _gameMap.blockingActorAtLocation(pos);
+    if (blockingActor != null) {
+      _actor.setNextAction(HitAction(blockingActor, pos));
       return false;
     }
+
     _actor.pos = pos;
 
     return true;
@@ -60,7 +61,8 @@ class HitAction extends Action {
 
   @override
   bool perform() {
-    if (_actor is Hero && _pos == _target.pos) {
+    // if (_actor is Hero && _pos == _target.pos) {
+    if (_pos == _target.pos) {
 print('${_actor.name} hits ${_target.name} for ${_actor.melee.power - _target.defense.toughness} points of damage!');
       var targetIsDead = _target.takeDamage(_actor.melee.power);
       if (targetIsDead) {
@@ -69,7 +71,6 @@ print('${_target.name} is dead!');
       return true;
 
     }
-
     return true;
   }
 }

@@ -163,9 +163,10 @@ class GameMap {
             createVTunnel(x1, math.min(y1, y2), lengthY);
             createHTunnel(math.min(x1, x2), y2, lengthX);
           }
+
+          placeMonsters(newRoom, _maxMonstersPerRoom);
         }
         rooms.add(newRoom);
-        placeMonsters(newRoom, _maxMonstersPerRoom);
         numRooms++;
       }
 
@@ -178,15 +179,15 @@ class GameMap {
            room1.topLeft.y <= room2.bottomRight.y && room1.bottomRight.y >= room2.topLeft.y;
   }
 
-  Actor monsterAtLocation(Vec pos) {
-    for (var monster in monsters) {
-      if (monster.pos == pos && monster.isAlive) {
-        return monster;
-      }
-    }
+  // Actor monsterAtLocation(Vec pos) {
+  //   for (var monster in monsters) {
+  //     if (monster.pos == pos && monster.isAlive) {
+  //       return monster;
+  //     }
+  //   }
 
-    return null;
-  }
+  //   return null;
+  // }
 
   Actor blockingActorAtLocation(Vec pos) {
     for (var actor in actors) {
