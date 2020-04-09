@@ -5,6 +5,7 @@ import 'package:malison/malison.dart';
 import 'package:malison/malison_web.dart';
 import 'package:piecemeal/piecemeal.dart';
 import 'package:rltut/src/action.dart';
+import 'package:rltut/src/actionqueue.dart';
 import 'package:rltut/src/actor.dart';
 import 'package:rltut/src/gamemap.dart';
 import 'package:rltut/src/input.dart';
@@ -67,7 +68,6 @@ void _addFont(String name, int charWidth, [int charHeight]) {
 
   html.querySelector('.button-bar').children.add(button);
 }
-
 
 RetroTerminal _makeTerminal(
     html.CanvasElement canvas, int charWidth, int charHeight) {
@@ -172,10 +172,11 @@ void main() {
   _ui.keyPress.bind(Input.s, KeyCode.numpad2);
   _ui.keyPress.bind(Input.se, KeyCode.numpad3);
 
-  gameMap = GameMap(_font.terminal.width, _font.terminal.height);
+  gameMap = GameMap(_font.terminal.width, _font.terminal.height, ActionQueue());
   gameMap.maxMonstersPerRoom = 3;
   gameMap.makeMap(25, 6, 15);
-  hero = Hero(gameMap, 'Swoosh', gameMap.entrance);
+  hero = Hero(gameMap, 'Swoosh', '@', Color.white);
+  hero.pos = gameMap.entrance;
 
   gameMap.actors.add(hero);
   gameMap.actors.addAll(gameMap.monsters);
@@ -199,65 +200,65 @@ class GameScreen extends Screen<Input> {
 
   @override
   bool handleInput(Input input) {
-
     if (gameState == GameStates.playerTurn) {
-      Action action;
+      var direction;
       switch (input) {
         case Input.nw:
-          action = MoveAction(Direction.nw);
+          direction = Direction.nw;
           break;
         case Input.n:
-          action = MoveAction(Direction.n);
+          direction = Direction.n;
           break;
         case Input.ne:
-          action = MoveAction(Direction.ne);
+          direction = Direction.ne;
           break;
         case Input.w:
-          action = MoveAction(Direction.w);
+          direction = Direction.w;
           break;
         case Input.e:
-          action = MoveAction(Direction.e);
+          direction = Direction.e;
           break;
         case Input.sw:
-          action = MoveAction(Direction.sw);
+          direction = Direction.sw;
           break;
         case Input.s:
-          action = MoveAction(Direction.s);
+          direction = Direction.s;
           break;
         case Input.se:
-          action = MoveAction(Direction.se);
+          direction = Direction.se;
           break;
         
         default:
           return false;
       }
 
-      if (action != null) {
-        hero.setNextAction(action);
-        gameState = GameStates.enemyTurn;
+      if (hero.isAlive) {
+        if (direction != null) {
+          gameMap.actions.addAction(WalkAction(hero, gameMap, direction));
+        }
       }
+
+      gameState = GameStates.enemyTurn;
+
     }
 
     if (gameState == GameStates.enemyTurn) {
       for (var actor in gameMap.actors) {
         if (actor is Monster) {
-          actor.setNextAction(actor.takeTurn());
+          gameMap.actions.addAction(actor.takeTurn());
         }
       }
       gameState = GameStates.playerTurn;
     }
 
     for (var i = 0; i < gameMap.actors.length; i++) {
-      // if (gameMap.actors[i] is Monster && !gameMap.actors[i].isAlive) {
       if (!gameMap.actors[i].isAlive) {
         gameMap.actors.removeAt(i);
         i--;
       }
-      while (gameMap.actors[i].action != null && !gameMap.actors[i].action.perform()) {
-
-      }
-      gameMap.actors[i].setNextAction(null);
     }
+
+    gameMap.actions.perform();
 
     gameMap.fov.refresh(hero.pos);
 
@@ -301,7 +302,9 @@ class GameScreen extends Screen<Input> {
 
     for (var actor in gameMap.actors) {
       if (gameMap.tiles[actor.pos].isVisible && actor.isAlive) {
-        terminal.writeAt(actor.x, actor.y, actor.glyph, actor.color, gameMap.colors['lightGround']);
+        terminal.writeAt(actor.pos.x, actor.pos.y, actor.glyph, actor.color, gameMap.colors['lightGround']);
+      } else if (debug) {
+        terminal.writeAt(actor.pos.x, actor.pos.y, actor.glyph, actor.color, Color.red);
       }
     }
 

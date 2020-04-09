@@ -4,73 +4,68 @@ import 'package:rltut/src/gamemap.dart';
 import 'package:rltut/src/monster.dart';
 
 abstract class Action {
-  Actor _actor;
+  final Actor _actor;
   Actor get actor => _actor;
-  GameMap _gameMap;
 
-  void bind(Actor actor) {
-    _actor = actor;
-    _gameMap = actor.gameMap;
+  final GameMap _gameMap;
+  GameMap get gameMap => _gameMap;
+
+  Action(this._actor, this._gameMap);
+
+  void perform();
+}
+
+class WalkAction extends Action {
+  final Direction _direction;
+  Direction get direction => _direction;
+
+  WalkAction(Actor actor, GameMap gameMap, this._direction) : super(actor, gameMap);
+
+  @override
+  void perform() {
+    var destination = actor.pos + direction;
+    if (!gameMap.validDestination(destination)) {
+      return;
+    }
+    var target = gameMap.isOccupied(destination);
+    if (target != null) {
+      if (actor is Monster && target is Monster) {
+        return;
+      } else {
+        gameMap.actions.addAction(HitAction(actor, gameMap, target));
+        return;
+      }
+    }
+
+    _actor.pos = destination;
+
   }
-
-  bool perform();
 }
 
 class IdleAction extends Action {
-  IdleAction();
-  @override
-  bool perform() {
-// var pos = _actor.pos;
-// print('${_actor.name} stands idle at ($pos), staring at nothing in particular.');
-    return true;
-  }
-}
-
-class MoveAction extends Action {
-  final Direction dir;
-
-  MoveAction(this.dir);
+  IdleAction(Actor actor, GameMap gameMap) : super(actor, gameMap);
 
   @override
-  bool perform() {
-    var pos = _actor.pos + dir;
-    if (!_gameMap.tiles.bounds.contains(pos)) {
-      return true;
-    }
-    if (_gameMap.isBlocked(pos)) {
-      return true;
-    }
-    var blockingActor = _gameMap.blockingActorAtLocation(pos);
-    if (blockingActor != null) {
-      _actor.setNextAction(HitAction(blockingActor, pos));
-      return false;
-    }
-
-    _actor.pos = pos;
-
-    return true;
+  void perform() {
+// print('${actor.name} stares blankly into space.');
   }
-
 }
 
 class HitAction extends Action {
-  final Actor _target;
-  final Vec _pos;
-
-  HitAction(this._target, this._pos);
+  final Actor target;
+  HitAction(Actor actor, GameMap gameMap, this.target) : super(actor, gameMap);
 
   @override
-  bool perform() {
-    // if (_actor is Hero && _pos == _target.pos) {
-    if (_pos == _target.pos) {
-print('${_actor.name} hits ${_target.name} for ${_actor.melee.power - _target.defense.toughness} points of damage!');
-      var targetIsDead = _target.takeDamage(_actor.melee.power);
-      if (targetIsDead) {
-print('${_target.name} is dead!');
+  void perform() {
+    var amount = actor.melee.power - target.defense.toughness;
+    if (amount > 0) {
+print('${actor.name} hits ${target.name} for $amount points of damage.');
+      var dead = target.takeDamage(amount);
+      if (dead) {
+print('${actor.name} killed ${target.name}!');
       }
-      return true;
-
+    } else {
+print('${actor.name} attacks ${target.name} but does not cause any damage.');
     }
-    return true;
   }
 }

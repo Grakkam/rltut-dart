@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:malison/malison.dart';
 import 'package:piecemeal/piecemeal.dart';
+import 'package:rltut/src/actionqueue.dart';
 import 'package:rltut/src/actor.dart';
 import 'package:rltut/src/fov.dart';
 import 'package:rltut/src/monster.dart';
@@ -9,8 +10,25 @@ import 'package:rltut/src/tile.dart';
 class GameMap {
   final int _width;
   final int _height;
+  final ActionQueue _actionQueue;
   Array2D _tiles;
   Fov fov;
+
+  ActionQueue get actions => _actionQueue;
+
+  bool withinBounds(Vec pos) => _tiles.bounds.contains(pos);
+  bool isBlocked(Vec pos) => _tiles[pos].blocked;
+  bool validDestination(Vec pos) => withinBounds(pos) && !isBlocked(pos);
+
+  Actor isOccupied(Vec pos) {
+    for (Actor actor in actors) {
+      if (pos == actor.pos && actor.isAlive) {
+        return actor;
+      }
+    }
+    return null;
+  }
+
   final rand = math.Random();
   final _colors = {
     'darkWall': Color.darkGray,
@@ -23,6 +41,7 @@ class GameMap {
   Vec _firstRoomCenter;
 
   Hero hero;
+  bool heroAt(Vec pos) => hero.pos == pos;
 
   int _maxMonstersPerRoom;
   set maxMonstersPerRoom(int maxMonstersPerRoom) => _maxMonstersPerRoom = maxMonstersPerRoom;
@@ -31,7 +50,7 @@ class GameMap {
 
   Vec get entrance => _firstRoomCenter;
 
-  GameMap(this._width, this._height) {
+  GameMap(this._width, this._height, this._actionQueue) {
     _tiles = Array2D(_width, _height);
     
     InitializeTiles();
@@ -51,11 +70,6 @@ class GameMap {
       }
     }
 
-  }
-
-  bool isBlocked(Vec pos) {
-    var tile = _tiles[pos];
-    return tile.blocked;
   }
 
   void createRoom(Rect room) {
@@ -128,9 +142,7 @@ class GameMap {
 
       var intersect = false;
       for (var otherRoom in rooms) {
-        // var intersect = Rect.intersect(newRoom, otherRoom).size;
         intersect = this.intersect(newRoom, otherRoom);
-        // if (intersect > 0) {
         if (intersect) {
           break;
         }
@@ -189,13 +201,13 @@ class GameMap {
   //   return null;
   // }
 
-  Actor blockingActorAtLocation(Vec pos) {
-    for (var actor in actors) {
-      if (actor.isAlive && actor.pos == pos) {
-        return actor;
-      }
-    }
+  // Actor blockingActorAtLocation(Vec pos) {
+  //   for (var actor in actors) {
+  //     if (actor.isAlive && actor.pos == pos) {
+  //       return actor;
+  //     }
+  //   }
 
-    return null;
-  }
+  //   return null;
+  // }
 }

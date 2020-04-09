@@ -1,9 +1,10 @@
 import 'package:malison/malison.dart';
 import 'package:piecemeal/piecemeal.dart';
 import 'package:rltut/src/action.dart';
+// import 'package:rltut/src/action.dart';
 import 'package:rltut/src/actor.dart';
 import 'package:rltut/src/combat.dart';
-import 'package:rltut/src/fov.dart';
+// import 'package:rltut/src/fov.dart';
 import 'package:rltut/src/gamemap.dart';
 
 class Breed {
@@ -19,14 +20,12 @@ class Breed {
 
 class Orc extends Breed {
   Orc()
-      : super('Orc', 10, 'o', Color.green, Attack(1, 3), Defense(2));
+      : super('Orc', 10, 'o', Color.green, Attack(1, 3), Defense(0));
 }
 
 class Troll extends Breed {
   Troll()
-      : super('Troll', 20, 'T', Color.darkGreen, Attack(1, 5), Defense(4)) {
-        
-      }
+      : super('Troll', 16, 'T', Color.darkGreen, Attack(1, 4), Defense(1));
 }
 
 class Monster extends Actor {
@@ -36,14 +35,12 @@ class Monster extends Actor {
     _breed = value;
   }
 
-  Color get color => _breed.color;
-  String get glyph => _breed.glyph;
-
-  Monster(this._breed, GameMap gameMap, Vec pos)
-      : super(gameMap, _breed.name, pos) {
+  Monster(this._breed, GameMap gameMap, Vec position)
+      : super(gameMap, _breed.name, _breed.glyph, _breed.color) {
+        pos = position;
         hp = _breed.maxHp;
-        melee = breed.melee;
-        defense = breed.defense;
+        melee = _breed.melee;
+        defense = _breed.defense;
   }
 
   Action takeTurn() {
@@ -52,10 +49,10 @@ class Monster extends Actor {
       if (distanceTo(hero.pos) > 1) {
         return moveTowards(hero.pos);
       } else if (hero.hp > 0) {
-        return HitAction(hero, hero.pos);
+        return HitAction(this, gameMap, hero);
       }
     }
-    return IdleAction();
+    return IdleAction(this, gameMap);
   }
 }
 

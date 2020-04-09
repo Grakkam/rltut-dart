@@ -6,62 +6,49 @@ import 'package:rltut/src/combat.dart';
 import 'package:rltut/src/gamemap.dart';
 
 abstract class Actor {
-  Vec _pos;
-  Action _action;
+
   GameMap _gameMap;
-  String _name;
-
-  int _hp;
-  set hp(int value) {
-    _hp = value;
-  }
-  int get hp => _hp;
-
-  Attack _melee;
-  set melee(Attack value) {
-    _melee = value;
-  }
-  Attack get melee => _melee;
-  
-  Defense _defense;
-  set defense(Defense value) {
-    _defense = value;
-  }
-  Defense get defense => _defense;
-
-  Actor(this._gameMap, this._name, this._pos);
-
-  set name(String name) => _name = name;
-  String get name => _name;
-
   set gameMap(GameMap gameMap) => _gameMap = gameMap;
   GameMap get gameMap => _gameMap;
 
-  set pos(Vec pos) => _pos = pos;
+  String _name;
+  set name(String name) => _name = name;
+  String get name => _name;
+
+  String _glyph;
+  set glyph(String input) {
+    var rune = input.runes.elementAt(0);
+    _glyph = String.fromCharCode(rune);
+  }
+  String get glyph => _glyph;
+
+  Color _color;
+  set color(Color color) => _color = color;
+  Color get color => _color;
+
+  Actor(this._gameMap, this._name, this._glyph, this._color);
+
+  Vec _pos;
+  set pos(Vec value) => _pos = value;
   Vec get pos => _pos;
-  int get x => _pos.x;
-  int get y => _pos.y;
 
-  void setNextAction(Action action) {
-    _action = action;
-  }
+  int _hp;
+  set hp(int value) => _hp = value;
+  int get hp => _hp;
 
-  Action get action {
-    if (_action != null) {
-      _action.bind(this);
-    }
-    return _action;
-  }
+  Attack _melee;
+  set melee(Attack value) => _melee = value;
+  Attack get melee => _melee;
+  
+  Defense _defense;
+  set defense(Defense value) => _defense = value;
+  Defense get defense => _defense;
 
   bool get isAlive => _hp > 0;
 
-  // Returns true if actor is dead.
+  /// Returns true if actor is dead.
   bool takeDamage(int amount) {
-    amount = amount - defense.toughness;
-    if (amount > 0) {
-      hp -= amount;
-    }
-
+    hp -= amount;
     return !isAlive;
   }
 
@@ -71,10 +58,10 @@ abstract class Actor {
     var dx = (d.x / distance).round();
     var dy = (d.y / distance).round();
 
-    if (!(gameMap[Vec(pos.x + dx, pos.y + dy)].blocked) || gameMap.blockingActorAtLocation(Vec(pos.x + dx, pos.y + dy)) != null) {
-      return MoveAction(Direction(dx, dy));
+    if (!(gameMap[Vec(pos.x + dx, pos.y + dy)].blocked) || gameMap.isOccupied(Vec(pos.x + dx, pos.y + dy)) != null) {
+      return WalkAction(this, gameMap,Direction(dx, dy));
     } else {
-      return IdleAction();
+      return IdleAction(this, gameMap);
     }
   }
 
@@ -87,30 +74,15 @@ abstract class Actor {
 
 class Hero extends Actor {
 
-  Color _color;
-  set color(Color color) => _color = color;
-  Color get color => _color;
-
-  String _glyph;
-  set glyph(String input) {
-    var rune = input.runes.elementAt(0);
-    _glyph = String.fromCharCode(rune);
-  }
-  String get glyph => _glyph;
-
   int _maxHp;
-  set maxHp(value) {
-    _maxHp = value;
-  }
+  set maxHp(value) => _maxHp = value;
   int get maxHp => _maxHp;
 
-  Hero(GameMap gameMap, String name, Vec pos) : super(gameMap, name, pos) {
-    _glyph = '@';
-    _color = Color.white;
+  Hero(GameMap gameMap, String name, String glyph, Color color) : super(gameMap, name, glyph, color) {
     _melee = Attack(1, 5);
     _defense = Defense(2);
     gameMap.hero = this;
-    hp = maxHp = 20;
+    hp = maxHp = 30;
   }
 
 }
