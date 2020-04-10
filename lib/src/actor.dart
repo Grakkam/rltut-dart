@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:malison/malison.dart';
 import 'package:piecemeal/piecemeal.dart';
 import 'package:rltut/src/action.dart';
+import 'package:rltut/src/astar.dart';
 import 'package:rltut/src/combat.dart';
 import 'package:rltut/src/gamemap.dart';
 
@@ -68,7 +69,12 @@ abstract class Actor {
   double distanceTo(Vec target) {
     var d = target - pos;
     return math.sqrt(d.x * d.x + d.y * d.y);
-  }  
+  }
+
+  Action moveAstar(Vec target) {
+    var path = Astar.findPath(gameMap, pos, target);
+    return moveTowards(path[1]);
+  }
 
 }
 

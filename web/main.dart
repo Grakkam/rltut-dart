@@ -243,6 +243,9 @@ class GameScreen extends Screen<Input> {
     }
 
     if (gameState == GameStates.enemyTurn) {
+      // Clear all debug paths
+      gameMap.clearPaths();
+
       for (var actor in gameMap.actors) {
         if (actor is Monster) {
           gameMap.actions.addAction(actor.takeTurn());
@@ -298,6 +301,9 @@ class GameScreen extends Screen<Input> {
         }
       }
       terminal.writeAt(pos.x, pos.y, ' ', color, color);
+      if (gameMap.tiles[pos].isPath) {
+        terminal.writeAt(pos.x, pos.y, '*', Color.white, color);
+      }
     }
 
     for (var actor in gameMap.actors) {

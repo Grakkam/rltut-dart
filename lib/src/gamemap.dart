@@ -191,23 +191,10 @@ class GameMap {
            room1.topLeft.y <= room2.bottomRight.y && room1.bottomRight.y >= room2.topLeft.y;
   }
 
-  // Actor monsterAtLocation(Vec pos) {
-  //   for (var monster in monsters) {
-  //     if (monster.pos == pos && monster.isAlive) {
-  //       return monster;
-  //     }
-  //   }
+  void clearPaths() {
+    for (var tile in tiles) {
+      tile.isPath = false;
+    }
+  }
 
-  //   return null;
-  // }
-
-  // Actor blockingActorAtLocation(Vec pos) {
-  //   for (var actor in actors) {
-  //     if (actor.isAlive && actor.pos == pos) {
-  //       return actor;
-  //     }
-  //   }
-
-  //   return null;
-  // }
 }
