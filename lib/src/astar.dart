@@ -13,9 +13,7 @@ class Node {
 
   @override
   String toString() {
-    if (parent == null) {
-      parent = Node(null, null);
-    }
+      parent ??= Node(null, null);
     return 'Pos: $pos | g: $g, h: $h, f: $f (Parent pos: ${parent.pos})';
   }
 
@@ -86,14 +84,16 @@ class Astar {
       }
 
       // Generate children
-      var neighbours = [ Vec(0, -1),
-                            Vec(0, 1),
-                            Vec(-1, 0),
-                            Vec(1, 0),
-                            Vec(-1, -1),
-                            Vec(-1, 1),
-                            Vec(1, -1),
-                            Vec(1, 1)];
+      var neighbours = [  Vec(0, -1),
+                          Vec(0, 1),
+                          Vec(-1, 0),
+                          Vec(1, 0),
+                          Vec(-1, -1),
+                          Vec(-1, 1),
+                          Vec(1, -1),
+                          Vec(1, 1)
+        ];
+
       var children = [];
       for (var neighbour in neighbours) {
         // Get node position

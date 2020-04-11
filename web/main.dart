@@ -301,8 +301,10 @@ class GameScreen extends Screen<Input> {
         }
       }
       terminal.writeAt(pos.x, pos.y, ' ', color, color);
-      if (gameMap.tiles[pos].isPath) {
-        terminal.writeAt(pos.x, pos.y, '*', Color.white, color);
+      if (debug) {
+        if (gameMap.tiles[pos].isPath) {
+          terminal.writeAt(pos.x, pos.y, '*', Color.white, color);
+        }
       }
     }
 

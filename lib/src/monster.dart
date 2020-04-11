@@ -1,11 +1,8 @@
 import 'package:malison/malison.dart';
 import 'package:piecemeal/piecemeal.dart';
 import 'package:rltut/src/action.dart';
-// import 'package:rltut/src/action.dart';
 import 'package:rltut/src/actor.dart';
-import 'package:rltut/src/astar.dart';
 import 'package:rltut/src/combat.dart';
-// import 'package:rltut/src/fov.dart';
 import 'package:rltut/src/gamemap.dart';
 
 class Breed {
@@ -49,7 +46,7 @@ class Monster extends Actor {
     if (gameMap[pos].isVisible) {
       if (distanceTo(hero.pos) > 1) {
         // return moveTowards(hero.pos);
-print('Monster: $name $pos');
+// print('Monster: $name $pos');
         return moveAstar(hero.pos);
       } else if (hero.hp > 0) {
         return HitAction(this, gameMap, hero);

@@ -12,7 +12,7 @@ abstract class Action {
 
   Action(this._actor, this._gameMap);
 
-  void perform();
+  List perform();
 }
 
 class WalkAction extends Action {
@@ -22,22 +22,25 @@ class WalkAction extends Action {
   WalkAction(Actor actor, GameMap gameMap, this._direction) : super(actor, gameMap);
 
   @override
-  void perform() {
+  List perform() {
+    var results = [];
     var destination = actor.pos + direction;
     if (!gameMap.validDestination(destination)) {
-      return;
+      return results;
     }
     var target = gameMap.isOccupied(destination);
     if (target != null) {
       if (actor is Monster && target is Monster) {
-        return;
+        return results;
       } else {
-        gameMap.actions.addAction(HitAction(actor, gameMap, target));
-        return;
+        results.add({'alternative': {'attack': target}});
+        return results;
       }
     }
 
     _actor.pos = destination;
+
+    return results;
 
   }
 }
@@ -46,7 +49,8 @@ class IdleAction extends Action {
   IdleAction(Actor actor, GameMap gameMap) : super(actor, gameMap);
 
   @override
-  void perform() {
+  List perform() {
+    return [];
 // print('${actor.name} stares blankly into space.');
   }
 }
@@ -56,16 +60,21 @@ class HitAction extends Action {
   HitAction(Actor actor, GameMap gameMap, this.target) : super(actor, gameMap);
 
   @override
-  void perform() {
+  List perform() {
+    var results = [];
     var amount = actor.melee.power - target.defense.toughness;
     if (amount > 0) {
-print('${actor.name} hits ${target.name} for $amount points of damage.');
+      results.add({'message': '${actor.name} hits ${target.name} for $amount points of damage.'});
+// print('${actor.name} hits ${target.name} for $amount points of damage.');
       var dead = target.takeDamage(amount);
       if (dead) {
-print('${actor.name} killed ${target.name}!');
+        results.add({'message': '${actor.name} killed ${target.name}!'});
+// print('${actor.name} killed ${target.name}!');
       }
     } else {
-print('${actor.name} attacks ${target.name} but does not cause any damage.');
+      results.add({'message': '${actor.name} attacks ${target.name} but does not cause any damage.'});
+// print('${actor.name} attacks ${target.name} but does not cause any damage.');
     }
+    return results;
   }
 }
