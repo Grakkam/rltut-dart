@@ -29,6 +29,10 @@ abstract class Actor {
 
   Actor(this._gameMap, this._name, this._glyph, this._color);
 
+  bool _blocking = true;
+  set isBlocking(bool blocking) => _blocking = blocking;
+  bool get isBlocking => _blocking;
+
   Vec _pos;
   set pos(Vec value) => _pos = value;
   Vec get pos => _pos;
@@ -51,7 +55,7 @@ abstract class Actor {
   bool takeDamage(int amount) {
     hp -= amount;
     return !isAlive;
-  }
+  } // End of takeDamage()
 
   Action moveTowards(Vec target) {
     var d = target - pos;
@@ -64,33 +68,24 @@ abstract class Actor {
     } else {
       return IdleAction(this, gameMap);
     }
-  }
+  } // End of moveTowards()
 
   double distanceTo(Vec target) {
     var d = target - pos;
     return math.sqrt(d.x * d.x + d.y * d.y);
-  }
+  } // End of distanceTo()
 
   Action moveAstar(Vec target) {
     var path = Astar.findPath(gameMap, pos, target);
     return moveTowards(path[1]);
+  } // End of moveAstar()
+
+  void die() {
+    glyph = '%';
+    color = Color.darkRed;
+    isBlocking = false;
+    name = 'remains of ' + name;
   }
 
-}
-
-class Hero extends Actor {
-
-  int _maxHp;
-  set maxHp(value) => _maxHp = value;
-  int get maxHp => _maxHp;
-
-  Hero(GameMap gameMap, String name, String glyph, Color color) : super(gameMap, name, glyph, color) {
-    _melee = Attack(1, 5);
-    _defense = Defense(2);
-    gameMap.hero = this;
-    hp = maxHp = 30;
-  }
-
-}
-
+} // End of class Actor
 

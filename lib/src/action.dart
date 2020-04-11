@@ -1,6 +1,7 @@
 import 'package:piecemeal/piecemeal.dart';
 import 'package:rltut/src/actor.dart';
 import 'package:rltut/src/gamemap.dart';
+import 'package:rltut/src/hero.dart';
 import 'package:rltut/src/monster.dart';
 
 abstract class Action {
@@ -43,7 +44,7 @@ class WalkAction extends Action {
     return results;
 
   }
-}
+} // End of class WalkAction
 
 class IdleAction extends Action {
   IdleAction(Actor actor, GameMap gameMap) : super(actor, gameMap);
@@ -53,7 +54,7 @@ class IdleAction extends Action {
     return [];
 // print('${actor.name} stares blankly into space.');
   }
-}
+} // End of class IdleAction
 
 class HitAction extends Action {
   final Actor target;
@@ -62,6 +63,10 @@ class HitAction extends Action {
   @override
   List perform() {
     var results = [];
+
+    if (!actor.isAlive) {
+      return results;
+    }
     var amount = actor.melee.power - target.defense.toughness;
     if (amount > 0) {
       results.add({'message': '${actor.name} hits ${target.name} for $amount points of damage.'});
@@ -69,6 +74,10 @@ class HitAction extends Action {
       var dead = target.takeDamage(amount);
       if (dead) {
         results.add({'message': '${actor.name} killed ${target.name}!'});
+        target.die();
+        if (target is Hero) {
+          results.add({'playerDead': true});
+        }
 // print('${actor.name} killed ${target.name}!');
       }
     } else {
@@ -77,4 +86,4 @@ class HitAction extends Action {
     }
     return results;
   }
-}
+} // End of class HitAction

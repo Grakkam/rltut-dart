@@ -4,6 +4,7 @@ import 'package:piecemeal/piecemeal.dart';
 import 'package:rltut/src/actionqueue.dart';
 import 'package:rltut/src/actor.dart';
 import 'package:rltut/src/fov.dart';
+import 'package:rltut/src/hero.dart';
 import 'package:rltut/src/monster.dart';
 import 'package:rltut/src/tile.dart';
 
@@ -22,7 +23,7 @@ class GameMap {
 
   Actor isOccupied(Vec pos) {
     for (Actor actor in actors) {
-      if (pos == actor.pos && actor.isAlive) {
+      if (pos == actor.pos && actor.isAlive && actor.isBlocking) {
         return actor;
       }
     }
@@ -120,7 +121,7 @@ class GameMap {
     }
   }
 
-  void makeMap(int maxRooms, int minRoomSize, int maxRoomSize) {
+  void makeMap(int maxRoomSize, int minRoomSize, int maxRooms) {
     var rooms = [];
     var numRooms = 0;
 

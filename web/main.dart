@@ -8,12 +8,15 @@ import 'package:rltut/src/action.dart';
 import 'package:rltut/src/actionqueue.dart';
 import 'package:rltut/src/actor.dart';
 import 'package:rltut/src/gamemap.dart';
+import 'package:rltut/src/hero.dart';
 import 'package:rltut/src/input.dart';
 import 'package:rltut/src/monster.dart';
 
+import 'malisonbaseexperiment.dart';
+
 const bool debug = false;
 
-enum GameStates { playerTurn, enemyTurn }
+enum GameStates { playerTurn, enemyTurn, playerDead }
 var gameState;
 
 Hero hero;
@@ -172,9 +175,9 @@ void main() {
   _ui.keyPress.bind(Input.s, KeyCode.numpad2);
   _ui.keyPress.bind(Input.se, KeyCode.numpad3);
 
-  gameMap = GameMap(_font.terminal.width, _font.terminal.height, ActionQueue());
+  gameMap = GameMap(_font.terminal.width, _font.terminal.height - 6, ActionQueue());
   gameMap.maxMonstersPerRoom = 3;
-  gameMap.makeMap(25, 6, 15);
+  gameMap.makeMap(10, 6, 30);
   hero = Hero(gameMap, 'Swoosh', '@', Color.white);
   hero.pos = gameMap.entrance;
 
@@ -247,27 +250,26 @@ class GameScreen extends Screen<Input> {
       gameMap.clearPaths();
 
       for (var actor in gameMap.actors) {
-        if (actor is Monster) {
+        if (actor is Monster && actor.isAlive) {
           gameMap.actions.addAction(actor.takeTurn());
         }
       }
       gameState = GameStates.playerTurn;
     }
 
-    for (var i = 0; i < gameMap.actors.length; i++) {
-      if (!gameMap.actors[i].isAlive) {
-        gameMap.actors.removeAt(i);
-        i--;
+    var turnResults = gameMap.actions.perform();
+    for (var turnResult in turnResults) {
+      var playerDead = turnResult.remove('playerDead');
+      if (playerDead != null) {
+        gameState = GameStates.playerDead;
+print('YOU DIED!');
       }
     }
-
-    gameMap.actions.perform();
 
     gameMap.fov.refresh(hero.pos);
 
     updateTerminal();
     // _ui.refresh();
-
 
     return true;
   }
@@ -309,12 +311,20 @@ class GameScreen extends Screen<Input> {
     }
 
     for (var actor in gameMap.actors) {
+      if (gameMap.tiles[actor.pos].isVisible && !actor.isAlive) {
+        terminal.writeAt(actor.pos.x, actor.pos.y, actor.glyph, actor.color, gameMap.colors['lightGround']);
+      }
+    }
+
+    for (var actor in gameMap.actors) {
       if (gameMap.tiles[actor.pos].isVisible && actor.isAlive) {
         terminal.writeAt(actor.pos.x, actor.pos.y, actor.glyph, actor.color, gameMap.colors['lightGround']);
       } else if (debug) {
         terminal.writeAt(actor.pos.x, actor.pos.y, actor.glyph, actor.color, Color.red);
       }
     }
+
+    terminal.writeAt(1, _font.terminal.height - 2, 'HP: ${gameMap.hero.hp}/${gameMap.hero.maxHp}', Color.white, Color.black);
 
   }
 
