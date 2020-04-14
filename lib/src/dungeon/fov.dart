@@ -1,5 +1,5 @@
 import 'package:piecemeal/piecemeal.dart';
-import 'package:rltut/src/gamemap.dart';
+import 'package:rltut/src/dungeon/dungeon.dart';
 
 // http://journal.stuffwithstuff.com/2015/09/07/what-the-hero-sees/
 
@@ -20,15 +20,15 @@ Vec transformOctant(int row, int col, int octant) {
 
 /// Calculates the [Hero]'s field of view of the dungeon.
 class Fov {
-  final GameMap _gameMap;
+  final Dungeon _dungeon;
 
-  Fov(this._gameMap);
+  Fov(this._dungeon);
 
   /// Updates the visible flags in [gameMap] given the [Hero]'s [pos].
   void refresh(Vec pos) {
 
-    for (var pos in _gameMap.tiles.bounds) {
-      _gameMap.tiles[pos].isVisible = false;
+    for (var pos in _dungeon.tiles.bounds) {
+      _dungeon.tiles[pos].isVisible = false;
     }
 
     // Sweep through the octants.
@@ -37,12 +37,12 @@ class Fov {
     }
 
     // The starting position is always visible.
-    _gameMap.tiles[pos].isVisible = true;
+    _dungeon.tiles[pos].isVisible = true;
   }
 
   List<Shadow> refreshOctant(Vec start, int octant, [int maxRows = 10]) {
     var line = ShadowLine();
-    var bounds = _gameMap.tiles.bounds;
+    var bounds = _dungeon.tiles.bounds;
     var fullShadow = false;
 
     // Sweep through the rows ('rows' may be vertical or horizontal based on
@@ -66,16 +66,16 @@ class Fov {
         // If we know the entire row is in shadow, we don't need to be more
         // specific.
         if (fullShadow) {
-          _gameMap.tiles[pos].isVisible = false;
+          _dungeon.tiles[pos].isVisible = false;
         } else {
           var projection = _projectTile(row, col);
 
           // Set the visibility of this tile.
           var visible = !line.isInShadow(projection);
-          _gameMap.tiles[pos].isVisible = visible;
+          _dungeon.tiles[pos].isVisible = visible;
 
           // Add any opaque tiles to the shadow map.
-          if (visible && _gameMap.tiles[pos].isWall) {
+          if (visible && _dungeon.tiles[pos].isWall) {
             line.add(projection);
             fullShadow = line.isFullShadow;
           }

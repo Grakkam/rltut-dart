@@ -1,5 +1,5 @@
 import 'package:piecemeal/piecemeal.dart';
-import 'package:rltut/src/gamemap.dart';
+import 'package:rltut/src/dungeon/dungeon.dart';
 
 class Node {
   Node parent;
@@ -34,7 +34,7 @@ class Astar {
   /// Returns a List of [Vec]s as a path from the given start to
   /// the given end in the given maze.
 
-  static List findPath(GameMap gameMap, Vec startPos, Vec endPos) {
+  static List findPath(Dungeon dungeon, Vec startPos, Vec endPos) {
 
     // Create start and end nodes
     var startNode = Node(null, startPos);
@@ -71,7 +71,7 @@ class Astar {
       openList.removeAt(currentIndex);
       closedList.add(currentNode);
 
-      gameMap.tiles[currentNode.pos].isPath = true;
+      dungeon.tiles[currentNode.pos].isPath = true;
 
       // Found the goal
       if (currentNode.pos == endNode.pos) {
@@ -99,7 +99,7 @@ class Astar {
         // Get node position
         var nodePosition = currentNode.pos + neighbour;
         
-        if (!gameMap.validDestination(nodePosition)) {
+        if (!dungeon.validDestination(nodePosition)) {
           continue;
         }
 

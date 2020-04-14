@@ -1,7 +1,7 @@
 An attempt to follow the Roguelike Tutorial using Dart and the malison package.
 
 
-Sources and inspiration:
+Sources and inspiration, from which I have borrowed heavily:
 
 http://www.rogueliketutorials.com/
 The Python tutorial that I am basing this project on. A great place to start if you want to get into roguelike development!

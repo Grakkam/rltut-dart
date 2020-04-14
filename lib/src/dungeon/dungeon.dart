@@ -1,21 +1,28 @@
 import 'dart:math' as math;
 import 'package:malison/malison.dart';
 import 'package:piecemeal/piecemeal.dart';
-import 'package:rltut/src/actionqueue.dart';
-import 'package:rltut/src/actor.dart';
-import 'package:rltut/src/fov.dart';
-import 'package:rltut/src/hero.dart';
-import 'package:rltut/src/monster.dart';
-import 'package:rltut/src/tile.dart';
+import 'package:rltut/src/engine/core/actor.dart';
+import 'package:rltut/src/engine/core/game.dart';
+import 'package:rltut/src/engine/monster/monster.dart';
+import 'fov.dart';
+import 'tile.dart';
 
-class GameMap {
+class Dungeon {
+  final Game _game;
   final int _width;
   final int _height;
-  final ActionQueue _actionQueue;
+  final int _maxMonstersPerRoom;
+
+  Dungeon(this._game, this._width, this._height, this._maxMonstersPerRoom) {
+    _tiles = Array2D(_width, _height);
+    
+    InitializeTiles();
+  }
+
+  List get actors => _game.actors;
+
   Array2D _tiles;
   Fov fov;
-
-  ActionQueue get actions => _actionQueue;
 
   bool withinBounds(Vec pos) => _tiles.bounds.contains(pos);
   bool isBlocked(Vec pos) => _tiles[pos].blocked;
@@ -41,22 +48,9 @@ class GameMap {
   };
   Vec _firstRoomCenter;
 
-  Hero hero;
-  bool heroAt(Vec pos) => hero.pos == pos;
-
-  int _maxMonstersPerRoom;
-  set maxMonstersPerRoom(int maxMonstersPerRoom) => _maxMonstersPerRoom = maxMonstersPerRoom;
   List monsters = <Actor>[];
-  List actors = <Actor>[];
 
   Vec get entrance => _firstRoomCenter;
-
-  GameMap(this._width, this._height, this._actionQueue) {
-    _tiles = Array2D(_width, _height);
-    
-    InitializeTiles();
-    fov = Fov(this);
-  }
 
   Array2D get tiles => _tiles;
   Map get colors => _colors;
@@ -91,34 +85,6 @@ class GameMap {
   void createVTunnel(int x, int y, int length) {
     var tunnel = Rect.column(x, y, length);
     createRoom(tunnel);
-  }
-
-  void placeMonsters(Rect room, int maxMonstersPerRoom) {
-    var numberOfMonsters = rand.nextInt(maxMonstersPerRoom);
-
-    for (var i = 0; i < numberOfMonsters; i++) {
-      var x = rand.nextInt(room.width - 1) + room.left + 1;
-      var y = rand.nextInt(room.height - 1) + room.top + 1;
-      var pos = Vec(x, y);
-
-      var occupied = false;
-      for (var monster in monsters) {
-        if (pos == monster.pos) {
-          occupied = true;
-        }
-      }
-
-      var monster;
-      if (!occupied) {
-        if (rand.nextInt(100) < 80) {
-          monster = Monster(Orc(), this, pos);
-        } else {
-          monster = Monster(Troll(), this, pos);
-        }
-
-        monsters.add(monster);
-      }
-    }
   }
 
   void makeMap(int maxRoomSize, int minRoomSize, int maxRooms) {
@@ -185,17 +151,45 @@ class GameMap {
 
     }
 
-  }
+  } // End of makeMap()
 
   bool intersect(Rect room1, Rect room2) {
     return room1.topLeft.x <= room2.topRight.x && room1.topRight.x >= room2.topLeft.x &&
            room1.topLeft.y <= room2.bottomRight.y && room1.bottomRight.y >= room2.topLeft.y;
-  }
+  } // End of intersect()
 
   void clearPaths() {
     for (var tile in tiles) {
       tile.isPath = false;
     }
-  }
+  } // End of clearPaths()
+
+  void placeMonsters(Rect room, int maxMonstersPerRoom) {
+    var numberOfMonsters = rand.nextInt(maxMonstersPerRoom);
+
+    for (var i = 0; i < numberOfMonsters; i++) {
+      var x = rand.nextInt(room.width - 1) + room.left + 1;
+      var y = rand.nextInt(room.height - 1) + room.top + 1;
+      var pos = Vec(x, y);
+
+      var occupied = false;
+      for (var monster in monsters) {
+        if (pos == monster.pos) {
+          occupied = true;
+        }
+      }
+
+      var monster;
+      if (!occupied) {
+        if (rand.nextInt(100) < 80) {
+          monster = Monster(_game, _game.breeds['orc'], pos);
+        } else {
+          monster = Monster(_game, _game.breeds['troll'], pos);
+        }
+
+        monsters.add(monster);
+      }
+    }
+  } // End of placeMonsters()
 
 }

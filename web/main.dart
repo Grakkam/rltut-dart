@@ -3,24 +3,15 @@ import 'dart:js';
 import 'dart:math' as math;
 import 'package:malison/malison.dart';
 import 'package:malison/malison_web.dart';
-import 'package:piecemeal/piecemeal.dart';
-import 'package:rltut/src/action.dart';
-import 'package:rltut/src/actionqueue.dart';
-import 'package:rltut/src/actor.dart';
-import 'package:rltut/src/gamemap.dart';
-import 'package:rltut/src/hero.dart';
-import 'package:rltut/src/input.dart';
-import 'package:rltut/src/monster.dart';
+import 'package:rltut/src/dungeon/dungeon.dart';
+import 'package:rltut/src/dungeon/fov.dart';
+import 'package:rltut/src/engine/core/combat.dart';
+import 'package:rltut/src/engine/core/game.dart';
+import 'package:rltut/src/engine/core/game-states.dart';
+import 'package:rltut/src/engine/hero/hero.dart';
+import 'package:rltut/src/ui/game_screen.dart';
+import 'package:rltut/src/ui/input.dart';
 
-import 'malisonbaseexperiment.dart';
-
-const bool debug = false;
-
-enum GameStates { playerTurn, enemyTurn, playerDead }
-var gameState;
-
-Hero hero;
-var gameMap;
 
 
 final _fonts = <TerminalFont>[];
@@ -35,8 +26,8 @@ class TerminalFont {
   final int charHeight;
 
   TerminalFont(this.name, this.canvas, this.terminal,
-    {this.charWidth, this.charHeight});
-}
+      {this.charWidth, this.charHeight});
+} // End of class TerminalFont
 
 void _addFont(String name, int charWidth, [int charHeight]) {
   charHeight ??= charWidth;
@@ -70,7 +61,25 @@ void _addFont(String name, int charWidth, [int charHeight]) {
   });
 
   html.querySelector('.button-bar').children.add(button);
-}
+} // End of _addFont()
+
+void _fullscreen() {
+  var div = html.querySelector('#game');
+  var jsElement = JsObject.fromBrowserObject(div);
+
+  var methods = [
+    'requestFullscreen',
+    'mozRequestFullScreen',
+    'webkitRequestFullscreen',
+    'msRequestFullscreen'
+  ];
+  for (var method in methods) {
+    if (jsElement.hasProperty(method)) {
+      jsElement.callMethod(method);
+      return;
+    }
+  }
+} // End of _fullscreen()
 
 RetroTerminal _makeTerminal(
     html.CanvasElement canvas, int charWidth, int charHeight) {
@@ -95,7 +104,7 @@ RetroTerminal _makeTerminal(
   }
   return RetroTerminal(width, height, '$file.png',
       canvas: canvas, charWidth: charWidth, charHeight: charHeight);
-}
+} // End of _makeTerminal()
 
 /// Updates the character dimensions of the current terminal to fit the screen
 /// size.
@@ -104,30 +113,10 @@ void _resizeTerminal() {
 
   _font.terminal = terminal;
   _ui.setTerminal(terminal);
-}
-
-/// See: https://stackoverflow.com/a/29715395/9457
-void _fullscreen() {
-  var div = html.querySelector('#game');
-  var jsElement = JsObject.fromBrowserObject(div);
-
-  var methods = [
-    'requestFullscreen',
-    'mozRequestFullScreen',
-    'webkitRequestFullscreen',
-    'msRequestFullscreen'
-  ];
-  for (var method in methods) {
-    if (jsElement.hasProperty(method)) {
-      jsElement.callMethod(method);
-      return;
-    }
-  }
-}
-
+  _ui.refresh();
+} // End of _resizeTerminal()
 
 void main() {
-
 
   _addFont('8x8', 8);
   _addFont('16x16', 16);
@@ -152,7 +141,6 @@ void main() {
 
   _ui = UserInterface<Input>(_font.terminal);
 
-
   // Arrow keys.
   // +Shift for north-...
   // +Alt for south-...
@@ -175,161 +163,28 @@ void main() {
   _ui.keyPress.bind(Input.s, KeyCode.numpad2);
   _ui.keyPress.bind(Input.se, KeyCode.numpad3);
 
-  gameMap = GameMap(_font.terminal.width, _font.terminal.height - 6, ActionQueue());
-  gameMap.maxMonstersPerRoom = 3;
-  gameMap.makeMap(10, 6, 30);
-  hero = Hero(gameMap, 'Swoosh', '@', Color.white);
-  hero.pos = gameMap.entrance;
+  var mapWidth = _font.terminal.width;
+  var mapHeight = _font.terminal.height - 2;
+  var maxMonstersPerRoom = 3;
+  var maxRoomSize = 10;
+  var minRoomSize = 6;
+  var maxRooms = 30;
 
-  gameMap.actors.add(hero);
-  gameMap.actors.addAll(gameMap.monsters);
+  var game = Game();
+  game.dungeon = Dungeon(game, mapWidth, mapHeight, maxMonstersPerRoom);
+  game.dungeon.makeMap(maxRoomSize, minRoomSize, maxRooms);
 
-  gameMap.fov.refresh(hero.pos);
-  gameState = GameStates.playerTurn;
+  game.hero = Hero(game, 'Grakk', '@', Color.white, 30, Attack(5), Defense(2));
+  game.actors.add(game.hero);
+  game.actors.addAll(game.dungeon.monsters);
+  game.hero.pos = game.dungeon.entrance;
+  game.dungeon.fov = Fov(game.dungeon);
+  game.dungeon.fov.refresh(game.hero.pos);
 
-  _ui.push(GameScreen());
+  game.state = GameStates.playerTurn;
+
+  _ui.push(GameScreen(game));
 
   _ui.handlingInput = true;
-  _ui.running = true;
 
-}
-
-void updateTerminal() {
-  _ui.setTerminal(_font.terminal);
-}
-
-
-class GameScreen extends Screen<Input> {
-
-  @override
-  bool handleInput(Input input) {
-    if (gameState == GameStates.playerTurn) {
-      var direction;
-      switch (input) {
-        case Input.nw:
-          direction = Direction.nw;
-          break;
-        case Input.n:
-          direction = Direction.n;
-          break;
-        case Input.ne:
-          direction = Direction.ne;
-          break;
-        case Input.w:
-          direction = Direction.w;
-          break;
-        case Input.e:
-          direction = Direction.e;
-          break;
-        case Input.sw:
-          direction = Direction.sw;
-          break;
-        case Input.s:
-          direction = Direction.s;
-          break;
-        case Input.se:
-          direction = Direction.se;
-          break;
-        
-        default:
-          return false;
-      }
-
-      if (hero.isAlive) {
-        if (direction != null) {
-          gameMap.actions.addAction(WalkAction(hero, gameMap, direction));
-        }
-      }
-
-      gameState = GameStates.enemyTurn;
-
-    }
-
-    if (gameState == GameStates.enemyTurn) {
-      // Clear all debug paths
-      gameMap.clearPaths();
-
-      for (var actor in gameMap.actors) {
-        if (actor is Monster && actor.isAlive) {
-          gameMap.actions.addAction(actor.takeTurn());
-        }
-      }
-      gameState = GameStates.playerTurn;
-    }
-
-    var turnResults = gameMap.actions.perform();
-    for (var turnResult in turnResults) {
-      var playerDead = turnResult.remove('playerDead');
-      if (playerDead != null) {
-        gameState = GameStates.playerDead;
-print('YOU DIED!');
-      }
-    }
-
-    gameMap.fov.refresh(hero.pos);
-
-    updateTerminal();
-    // _ui.refresh();
-
-    return true;
-  }
-
-
-  @override
-  void render(Terminal terminal) {
-    terminal.clear();
-
-    for (var pos in gameMap.tiles.bounds) {
-      var tile = gameMap[pos];
-      var wall = tile.blocked;
-      var color;
-      if (tile.isVisible) {
-        if (wall) {
-          color = gameMap.colors['lightWall'];
-        } else {
-          color = gameMap.colors['lightGround'];
-        }
-      } else if (tile.isExplored) {
-        if (wall) {
-          color = gameMap.colors['darkWall'];
-        } else {
-          color = gameMap.colors['darkGround'];
-        }
-      } else if (debug) {
-        if (wall) {
-          color = gameMap.colors['unexploredWall'];
-        } else {
-          color = gameMap.colors['unexploredGround'];
-        }
-      }
-      terminal.writeAt(pos.x, pos.y, ' ', color, color);
-      if (debug) {
-        if (gameMap.tiles[pos].isPath) {
-          terminal.writeAt(pos.x, pos.y, '*', Color.white, color);
-        }
-      }
-    }
-
-    for (var actor in gameMap.actors) {
-      if (gameMap.tiles[actor.pos].isVisible && !actor.isAlive) {
-        terminal.writeAt(actor.pos.x, actor.pos.y, actor.glyph, actor.color, gameMap.colors['lightGround']);
-      }
-    }
-
-    for (var actor in gameMap.actors) {
-      if (gameMap.tiles[actor.pos].isVisible && actor.isAlive) {
-        terminal.writeAt(actor.pos.x, actor.pos.y, actor.glyph, actor.color, gameMap.colors['lightGround']);
-      } else if (debug) {
-        terminal.writeAt(actor.pos.x, actor.pos.y, actor.glyph, actor.color, Color.red);
-      }
-    }
-
-    terminal.writeAt(1, _font.terminal.height - 2, 'HP: ${gameMap.hero.hp}/${gameMap.hero.maxHp}', Color.white, Color.black);
-
-  }
-
-}
-
-
-
-
+} // End of main()

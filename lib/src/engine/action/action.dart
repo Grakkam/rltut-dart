@@ -1,35 +1,37 @@
 import 'package:piecemeal/piecemeal.dart';
-import 'package:rltut/src/actor.dart';
-import 'package:rltut/src/gamemap.dart';
-import 'package:rltut/src/hero.dart';
-import 'package:rltut/src/monster.dart';
+import 'package:rltut/src/dungeon/dungeon.dart';
+import 'package:rltut/src/engine/core/actor.dart';
+import 'package:rltut/src/engine/hero/hero.dart';
+import 'package:rltut/src/engine/monster/monster.dart';
+
 
 abstract class Action {
   final Actor _actor;
   Actor get actor => _actor;
 
-  final GameMap _gameMap;
-  GameMap get gameMap => _gameMap;
+  final Dungeon _dungeon;
+  Dungeon get dungeon => _dungeon;
 
-  Action(this._actor, this._gameMap);
+  Action(this._actor, this._dungeon);
 
   List perform();
-}
+} // End of class Action
+
 
 class WalkAction extends Action {
   final Direction _direction;
   Direction get direction => _direction;
 
-  WalkAction(Actor actor, GameMap gameMap, this._direction) : super(actor, gameMap);
+  WalkAction(Actor actor, Dungeon dungeon, this._direction) : super(actor, dungeon);
 
   @override
   List perform() {
     var results = [];
     var destination = actor.pos + direction;
-    if (!gameMap.validDestination(destination)) {
+    if (!dungeon.validDestination(destination)) {
       return results;
     }
-    var target = gameMap.isOccupied(destination);
+    var target = dungeon.isOccupied(destination);
     if (target != null) {
       if (actor is Monster && target is Monster) {
         return results;
@@ -46,8 +48,9 @@ class WalkAction extends Action {
   }
 } // End of class WalkAction
 
+
 class IdleAction extends Action {
-  IdleAction(Actor actor, GameMap gameMap) : super(actor, gameMap);
+  IdleAction(Actor actor, Dungeon dungeon) : super(actor, dungeon);
 
   @override
   List perform() {
@@ -56,9 +59,10 @@ class IdleAction extends Action {
   }
 } // End of class IdleAction
 
+
 class HitAction extends Action {
   final Actor target;
-  HitAction(Actor actor, GameMap gameMap, this.target) : super(actor, gameMap);
+  HitAction(Actor actor, Dungeon dungeon, this.target) : super(actor, dungeon);
 
   @override
   List perform() {
