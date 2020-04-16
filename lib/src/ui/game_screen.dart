@@ -5,12 +5,28 @@ import 'package:rltut/src/engine/action/action.dart';
 import 'package:rltut/src/engine/core/game-states.dart';
 import 'package:rltut/src/engine/core/game.dart';
 import 'package:rltut/src/engine/monster/monster.dart';
+import 'package:rltut/src/ui/bar.dart';
 import 'package:rltut/src/ui/input.dart';
+import 'package:rltut/src/ui/message-log.dart';
 
 class GameScreen extends Screen<Input> {
+  final int width;
+  final int height;
   final Game game;
+  Bar hpBar;
 
-  GameScreen(this.game);
+  GameScreen(this.game, this.width, this.height) {
+    var barX = 1;
+    var barY = game.dungeon.bounds.height;
+    var barWidth = 20;
+    hpBar = Bar(Vec(barX, barY), barWidth, 'HP', Color.red, Color.darkRed);
+
+    var messageLogX = barX + barWidth + 2;
+    var messageLogY = barY;
+    var messageLogWidth = game.dungeon.bounds.width - barWidth - 5;
+    var messageLogHeight = height - game.dungeon.bounds.height;
+    game.messageLog = MessageLog(Vec(messageLogX, messageLogY), messageLogWidth, messageLogHeight);
+  }
 
   @override
   bool handleInput(Input input) {
@@ -129,7 +145,8 @@ print('YOU DEAD!');
       }
     }
 
-    terminal.writeAt(1, 38, 'HP: ${game.hero.hp}/${game.hero.maxHp}', Color.white, Color.black);
+    hpBar.render(terminal, game.hero.hp, game.hero.maxHp);
+    game.messageLog.render(terminal);
 
   } // End of render()
 

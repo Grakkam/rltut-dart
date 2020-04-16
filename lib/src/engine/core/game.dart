@@ -1,10 +1,12 @@
 import 'dart:collection';
+import 'package:malison/malison.dart';
 import 'package:rltut/src/dungeon/dungeon.dart';
 import 'package:rltut/src/engine/core/actor.dart';
 import 'package:rltut/src/engine/core/game-states.dart';
 import 'package:rltut/src/engine/hero/hero.dart';
 import 'package:rltut/src/engine/monster/breed.dart';
 import 'package:rltut/src/engine/action/action.dart';
+import 'package:rltut/src/ui/message-log.dart';
 
 
 /// Root class for the game engine. All game state is contained within this.
@@ -27,6 +29,8 @@ class Game {
     _actions.add(action);
   } // End of addAction()
 
+  MessageLog messageLog;
+
   List update() {
     var turnResults = [];
 
@@ -37,12 +41,13 @@ class Game {
       for (var result in _results) {
         var message = result.remove('message');
         if (message != null) {
-print(message);
+          messageLog.addMessage(message);
         }
 
         var playerDead = result.remove('playerDead');
         if (playerDead != null) {
           turnResults.add({'playerDead': true});
+          messageLog.addMessage(Message('You died!', Color.red));
           state = GameStates.playerDead;
         }
 

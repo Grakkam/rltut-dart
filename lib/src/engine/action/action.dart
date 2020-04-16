@@ -1,8 +1,10 @@
+import 'package:malison/malison.dart';
 import 'package:piecemeal/piecemeal.dart';
 import 'package:rltut/src/dungeon/dungeon.dart';
 import 'package:rltut/src/engine/core/actor.dart';
 import 'package:rltut/src/engine/hero/hero.dart';
 import 'package:rltut/src/engine/monster/monster.dart';
+import 'package:rltut/src/ui/message-log.dart';
 
 
 abstract class Action {
@@ -73,20 +75,31 @@ class HitAction extends Action {
     }
     var amount = actor.melee.power - target.defense.toughness;
     if (amount > 0) {
-      results.add({'message': '${actor.name} hits ${target.name} for $amount points of damage.'});
-// print('${actor.name} hits ${target.name} for $amount points of damage.');
+      results.add({'message':
+          Message(
+            '${actor.name} hits ${target.name} for $amount points of damage.',
+            Color.white
+          )});
       var dead = target.takeDamage(amount);
       if (dead) {
-        results.add({'message': '${actor.name} killed ${target.name}!'});
-        target.die();
+        if (target is Monster) {
+          results.add({'message':
+              Message(
+                '${actor.name} killed ${target.name}!',
+                Color.orange
+              )});
+        }
         if (target is Hero) {
           results.add({'playerDead': true});
         }
-// print('${actor.name} killed ${target.name}!');
+        target.die();
       }
     } else {
-      results.add({'message': '${actor.name} attacks ${target.name} but does not cause any damage.'});
-// print('${actor.name} attacks ${target.name} but does not cause any damage.');
+      results.add({'message':
+          Message(
+            '${actor.name} attacks ${target.name} but does not cause any damage.',
+            Color.white
+          )});
     }
     return results;
   }

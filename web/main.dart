@@ -163,8 +163,10 @@ void main() {
   _ui.keyPress.bind(Input.s, KeyCode.numpad2);
   _ui.keyPress.bind(Input.se, KeyCode.numpad3);
 
-  var mapWidth = _font.terminal.width;
-  var mapHeight = _font.terminal.height - 2;
+  var terminalWidth = _font.terminal.width;
+  var terminalHeight = _font.terminal.height;
+  var mapWidth = terminalWidth;
+  var mapHeight = terminalHeight - 6;
   var maxMonstersPerRoom = 3;
   var maxRoomSize = 10;
   var minRoomSize = 6;
@@ -183,7 +185,7 @@ void main() {
 
   game.state = GameStates.playerTurn;
 
-  _ui.push(GameScreen(game));
+  _ui.push(GameScreen(game, terminalWidth, terminalHeight));
 
   _ui.handlingInput = true;
 
