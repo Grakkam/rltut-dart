@@ -5,6 +5,8 @@ import 'package:rltut/src/dungeon/dungeon.dart';
 import 'package:rltut/src/engine/action/action.dart';
 import 'package:rltut/src/engine/core/astar.dart';
 import 'package:rltut/src/engine/core/combat.dart';
+import 'package:rltut/src/engine/core/inventory.dart';
+import 'package:rltut/src/engine/hero/hero.dart';
 import 'game.dart';
 
 abstract class Actor {
@@ -18,6 +20,10 @@ abstract class Actor {
   Actor(this.game, this.name, this.icon, this.color, this._maxHp, this.melee, this.defense) {
     hp = maxHp;
   }
+
+  Inventory _inventory;
+
+  Inventory get inventory => this is Hero ? _inventory : null;
 
   bool isBlocking = true;
 
@@ -56,6 +62,11 @@ abstract class Actor {
     hp -= amount;
     return !isAlive;
   } // End of takeDamage()
+
+  void heal(int amount) {
+    hp += amount;
+    if (hp > maxHp) hp = maxHp;
+  } // End of heal()
 
   /// Temporary? Probably spawn a corpse item instead...
   void die() {

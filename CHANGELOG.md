@@ -1,3 +1,13 @@
+## 0.8.0
+
+- Part 8 of the tutorial implemented. Added basic item management.
+- Healing potions can now be picked up, dropped, and used to heal the hero.
+- Removed the game states FSM, as I don't believe it is needed.
+- Known bug: When dropping or using a potion, the game does not
+update until a valid key (for instance movement) is pressed. Need
+to figure out how to skip waiting for input after coming back from
+the inventory screen.
+
 ## 0.7.0
 
 - Re-numbered the versions to match the tutorial parts.

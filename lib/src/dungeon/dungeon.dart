@@ -3,6 +3,7 @@ import 'package:malison/malison.dart';
 import 'package:piecemeal/piecemeal.dart';
 import 'package:rltut/src/engine/core/actor.dart';
 import 'package:rltut/src/engine/core/game.dart';
+import 'package:rltut/src/engine/item/item.dart';
 import 'package:rltut/src/engine/monster/monster.dart';
 import 'fov.dart';
 import 'tile.dart';
@@ -12,14 +13,16 @@ class Dungeon {
   final int _width;
   final int _height;
   final int _maxMonstersPerRoom;
+  final int _maxItemsPerRoom;
 
-  Dungeon(this._game, this._width, this._height, this._maxMonstersPerRoom) {
+  Dungeon(this._game, this._width, this._height, this._maxMonstersPerRoom, this._maxItemsPerRoom) {
     _tiles = Array2D(_width, _height);
     
     InitializeTiles();
   }
 
   List get actors => _game.actors;
+  List get items => _game.items;
 
   Array2D _tiles;
   Fov fov;
@@ -28,8 +31,19 @@ class Dungeon {
   bool isBlocked(Vec pos) => _tiles[pos].blocked;
   bool validDestination(Vec pos) => withinBounds(pos) && !isBlocked(pos);
 
+  bool isEmpty(Vec pos) {
+    if (isOccupied(pos) != null) return false;
+    for (var item in items) {
+      if (pos == item.pos) return false;      
+    }
+    return true;
+  }
+
+  //
+  // This needs to return a bool instead
+  //
   Actor isOccupied(Vec pos) {
-    for (Actor actor in actors) {
+    for (var actor in actors) {
       if (pos == actor.pos && actor.isAlive && actor.isBlocking) {
         return actor;
       }
@@ -144,6 +158,7 @@ class Dungeon {
           }
 
           placeMonsters(newRoom, _maxMonstersPerRoom);
+          placeItems(newRoom, _maxItemsPerRoom);
         }
         rooms.add(newRoom);
         numRooms++;
@@ -164,30 +179,48 @@ class Dungeon {
     }
   } // End of clearPaths()
 
-  void placeMonsters(Rect room, int maxMonstersPerRoom) {
-    var numberOfMonsters = rand.nextInt(maxMonstersPerRoom);
-
-    for (var i = 0; i < numberOfMonsters; i++) {
+  Vec randomEmptySpot(Rect room) {
+    // Maximum nr of tries, so we don't get stuck in a loop
+    for (var i = 0; i < 20; i++) {
       var x = rand.nextInt(room.width - 1) + room.left + 1;
       var y = rand.nextInt(room.height - 1) + room.top + 1;
       var pos = Vec(x, y);
 
-      var occupied = false;
-      for (var monster in monsters) {
-        if (pos == monster.pos) {
-          occupied = true;
-        }
+      if (isEmpty(pos)) {
+        return pos;
       }
 
-      var monster;
-      if (!occupied) {
+    }
+    // If no empty spot is found, return null
+    return null;
+  }
+
+  void placeItems(Rect room, int maxItemsPerRoom) {
+    var numberOfItems = rand.nextInt(maxItemsPerRoom);
+
+    for (var i = 0; i < numberOfItems; i++) {
+      var pos = randomEmptySpot(room);
+      if (pos != null) {
+        var item = HealingPotion('Healing Potion', '!', Color.purple, pos, 4);
+        items.add(item);
+      }
+    }
+  } // End of placeItems()
+
+  void placeMonsters(Rect room, int maxMonstersPerRoom) {
+    var numberOfMonsters = rand.nextInt(maxMonstersPerRoom);
+
+    for (var i = 0; i < numberOfMonsters; i++) {
+      var pos = randomEmptySpot(room);
+      if (pos != null) {
+        var monster;
         if (rand.nextInt(100) < 80) {
           monster = Monster(_game, _game.breeds['orc'], pos);
         } else {
           monster = Monster(_game, _game.breeds['troll'], pos);
         }
 
-        monsters.add(monster);
+        monsters.add(monster);      
       }
     }
   } // End of placeMonsters()

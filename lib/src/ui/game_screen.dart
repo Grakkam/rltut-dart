@@ -2,12 +2,13 @@ import 'package:malison/malison.dart';
 import 'package:malison/malison_web.dart';
 import 'package:piecemeal/piecemeal.dart';
 import 'package:rltut/src/engine/action/action.dart';
-import 'package:rltut/src/engine/core/game-states.dart';
 import 'package:rltut/src/engine/core/game.dart';
 import 'package:rltut/src/engine/monster/monster.dart';
 import 'package:rltut/src/ui/bar.dart';
+import 'package:rltut/src/ui/drop_item_screen.dart';
 import 'package:rltut/src/ui/input.dart';
 import 'package:rltut/src/ui/message-log.dart';
+import 'package:rltut/src/ui/use_item_screen.dart';
 
 class GameScreen extends Screen<Input> {
   final int width;
@@ -30,62 +31,50 @@ class GameScreen extends Screen<Input> {
 
   @override
   bool handleInput(Input input) {
-    if (game.state == GameStates.playerTurn ) {
-    var direction;
-      switch (input) {
-        case Input.nw:
-          direction = Direction.nw;
-          break;
-        case Input.n:
-          direction = Direction.n;
-          break;
-        case Input.ne:
-          direction = Direction.ne;
-          break;
-        case Input.w:
-          direction = Direction.w;
-          break;
-        case Input.e:
-          direction = Direction.e;
-          break;
-        case Input.sw:
-          direction = Direction.sw;
-          break;
-        case Input.s:
-          direction = Direction.s;
-          break;
-        case Input.se:
-          direction = Direction.se;
-          break;
-        
-        default:
-          return false;
-      }
 
-      if (game.hero.isAlive) {
-        if (direction != null) {
-          game.addAction(WalkAction(game.hero, game.dungeon, direction));
-        }
-      }
-
-      game.state = GameStates.enemyTurn;
-
-    } // End if
-
-    if (game.state == GameStates.enemyTurn ) {
-      for (var actor in game.actors) {
-        if (actor is Monster && actor.isAlive) {
-          game.addAction(actor.takeTurn());
-        }
-      }
+    var action;
+    switch (input) {
+      case Input.nw:
+        action = WalkAction(game.hero, game.dungeon, Direction.nw);
+        break;
+      case Input.n:
+        action = WalkAction(game.hero, game.dungeon, Direction.n);
+        break;
+      case Input.ne:
+        action = WalkAction(game.hero, game.dungeon, Direction.ne);
+        break;
+      case Input.w:
+        action = WalkAction(game.hero, game.dungeon, Direction.w);
+        break;
+      case Input.e:
+        action = WalkAction(game.hero, game.dungeon, Direction.e);
+        break;
+      case Input.sw:
+        action = WalkAction(game.hero, game.dungeon, Direction.sw);
+        break;
+      case Input.s:
+        action = WalkAction(game.hero, game.dungeon, Direction.s);
+        break;
+      case Input.se:
+        action = WalkAction(game.hero, game.dungeon, Direction.se);
+        break;
+      case Input.pickUp:
+        action = PickupAction(game.hero, game.dungeon);
+        break;
+      case Input.drop:
+        ui.push(DropItemScreen(this));
+        action = 'drop';
+        break;
+      case Input.use:
+        ui.push(UseItemScreen(this));
+        action = 'use';
+        break;
+      
+      default:
+        return false;
     }
 
-    game.update();
-    game.dungeon.fov.refresh(game.hero.pos);
-
-    if (game.state == GameStates.playerDead) {
-print('YOU DEAD!');
-    }
+    if (action is Action) game.addAction(action);
 
     dirty();
     ui.refresh();
@@ -93,6 +82,20 @@ print('YOU DEAD!');
     return true;
 
   } // End of handleInput()
+
+  @override
+  void update() {
+
+    for (var actor in game.actors) {
+      if (actor is Monster && actor.isAlive) {
+        game.addAction(actor.takeTurn());
+      }
+    }
+
+    game.update();
+    game.dungeon.fov.refresh(game.hero.pos);
+
+  }
 
   @override
   void render(Terminal terminal) {
@@ -134,6 +137,12 @@ print('YOU DEAD!');
     for (var actor in dungeon.actors) {
       if (dungeon.tiles[actor.pos].isVisible && !actor.isAlive) {
         terminal.writeAt(actor.pos.x, actor.pos.y, actor.icon, actor.color, dungeon.colors['lightGround']);
+      }
+    }
+
+    for (var item in dungeon.items) {
+      if (dungeon.tiles[item.pos].isVisible) {
+        terminal.writeAt(item.pos.x, item.pos.y, item.icon, item.color, dungeon.colors['lightGround']);
       }
     }
 

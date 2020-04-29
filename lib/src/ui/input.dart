@@ -7,6 +7,12 @@ class Input {
 
   const Input(this.name);
 
+  static const cancel = Input('cancel');
+
+  static const drop = Input('drop');
+  static const use = Input('use');
+  static const pickUp = Input('pickUp');
+
   /// Directional inputs.
   /// These are used both for navigating in the level and the menu screens.
   static const n = Input('n');

@@ -7,11 +7,15 @@ import 'package:rltut/src/dungeon/dungeon.dart';
 import 'package:rltut/src/dungeon/fov.dart';
 import 'package:rltut/src/engine/core/combat.dart';
 import 'package:rltut/src/engine/core/game.dart';
-import 'package:rltut/src/engine/core/game-states.dart';
 import 'package:rltut/src/engine/hero/hero.dart';
 import 'package:rltut/src/ui/game_screen.dart';
 import 'package:rltut/src/ui/input.dart';
 
+var maxMonstersPerRoom = 3;
+var maxItemsPerRoom = 2;
+var maxRoomSize = 10;
+var minRoomSize = 6;
+var maxRooms = 30;
 
 
 final _fonts = <TerminalFont>[];
@@ -163,17 +167,19 @@ void main() {
   _ui.keyPress.bind(Input.s, KeyCode.numpad2);
   _ui.keyPress.bind(Input.se, KeyCode.numpad3);
 
+  _ui.keyPress.bind(Input.pickUp, KeyCode.g);
+  _ui.keyPress.bind(Input.drop, KeyCode.d);
+  _ui.keyPress.bind(Input.use, KeyCode.u);
+
+  _ui.keyPress.bind(Input.cancel, KeyCode.escape);
+
   var terminalWidth = _font.terminal.width;
   var terminalHeight = _font.terminal.height;
   var mapWidth = terminalWidth;
   var mapHeight = terminalHeight - 6;
-  var maxMonstersPerRoom = 3;
-  var maxRoomSize = 10;
-  var minRoomSize = 6;
-  var maxRooms = 30;
 
   var game = Game();
-  game.dungeon = Dungeon(game, mapWidth, mapHeight, maxMonstersPerRoom);
+  game.dungeon = Dungeon(game, mapWidth, mapHeight, maxMonstersPerRoom, maxItemsPerRoom);
   game.dungeon.makeMap(maxRoomSize, minRoomSize, maxRooms);
 
   game.hero = Hero(game, 'Grakk', '@', Color.white, 30, Attack(5), Defense(2));
@@ -182,8 +188,6 @@ void main() {
   game.hero.pos = game.dungeon.entrance;
   game.dungeon.fov = Fov(game.dungeon);
   game.dungeon.fov.refresh(game.hero.pos);
-
-  game.state = GameStates.playerTurn;
 
   _ui.push(GameScreen(game, terminalWidth, terminalHeight));
 

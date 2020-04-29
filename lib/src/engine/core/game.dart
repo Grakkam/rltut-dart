@@ -2,8 +2,8 @@ import 'dart:collection';
 import 'package:malison/malison.dart';
 import 'package:rltut/src/dungeon/dungeon.dart';
 import 'package:rltut/src/engine/core/actor.dart';
-import 'package:rltut/src/engine/core/game-states.dart';
 import 'package:rltut/src/engine/hero/hero.dart';
+import 'package:rltut/src/engine/item/item.dart';
 import 'package:rltut/src/engine/monster/breed.dart';
 import 'package:rltut/src/engine/action/action.dart';
 import 'package:rltut/src/ui/message-log.dart';
@@ -15,12 +15,11 @@ class Game {
   Hero hero;
   Dungeon dungeon;
 
-  var state;
-
   final Map _breeds = Breeds.getBreeds();
   Map get breeds => _breeds;
 
   List actors = <Actor>[];
+  List items = <Item>[];
 
   final _actions = Queue<Action>();
   List _results = [];
@@ -36,7 +35,7 @@ class Game {
 
     while (_actions.isNotEmpty) {
       var action = _actions.removeFirst();
-      _results = action.perform();
+      if (action.actor.isAlive) _results = action.perform();
 
       for (var result in _results) {
         var message = result.remove('message');
@@ -48,7 +47,6 @@ class Game {
         if (playerDead != null) {
           turnResults.add({'playerDead': true});
           messageLog.addMessage(Message('You died!', Color.red));
-          state = GameStates.playerDead;
         }
 
         var alternativeAction = result.remove('alternative');
@@ -61,10 +59,6 @@ class Game {
         
       } // End for
     } // End while
-
-    if (hero.isAlive) {
-      state = GameStates.playerTurn;
-    }
 
     return turnResults;
   } // End of update()
